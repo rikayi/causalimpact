@@ -1,4 +1,5 @@
-# Causal Impact [![Build Status](https://travis-ci.com/dafiti/causalimpact.svg?branch=master)](https://travis-ci.com/dafiti/causalimpact) [![Coverage Status](https://coveralls.io/repos/github/dafiti/causalimpact/badge.svg?branch=master)](https://coveralls.io/github/dafiti/causalimpact?branch=master)
+# Causal Impact [![Build Status](https://travis-ci.com/dafiti/causalimpact.svg?branch=master)](https://travis-ci.com/dafiti/causalimpact) [![Coverage Status](https://coveralls.io/repos/github/dafiti/causalimpact/badge.svg?branch=master)](https://coveralls.io/github/dafiti/causalimpact?branch=master) [![PyPI version](https://badge.fury.io/py/pycausalimpact.svg)](https://badge.fury.io/py/pycausalimpact) [![Pyversions](https://img.shields.io/pypi/pyversions/pycausalimpact.svg)](https://pypi.python.org/pypi/pycausalimpact) [![GitHub license](https://img.shields.io/github/license/dafiti/causalimpact.svg)](https://github.com/dafiti/causalimpact/blob/master/LICENSE)
+
 This repository is a Python version of [Google's Causal Impact](https://github.com/google/CausalImpact) model with all functionalities fully ported and tested.
 
 ## How it works
@@ -10,16 +11,21 @@ The model makes as assumption (which is recommended to be confirmed in your data
 
 The model is more commonly used to infer the impact that marketing interventions have on businesses such as the expected revenue associated to a given campaign or even to assert more precisely the revenue a given channel brings in by completely turning it off (also known as "hold-out" tests). It's important to note though that the model can be extensively used in different areas and subjects; any intervention on time series data can potentially be modeled and inferences be made upon observed and predicted data.
 
-Please refer to <a href=http://nbviewer.jupyter.org/github/dafiti/causalimpact/blob/14aa71977fe89a62b4adb95532bc838d3956fcc0/examples/getting_started.ipynb>getting started</a> in the `examples` folder for more information.
+Please refer to <a href=http://nbviewer.jupyter.org/github/dafiti/causalimpact/blob/master/examples/getting_started.ipynb>getting started</a> in the `examples` folder for more information.
 
 ## Instalation
+
     pip install pycausalimpact
+
 or (recommended):
 
     pipenv install pycausalimpact
+
 ## Requirements
 
- - Python 3.6
+ - python3
+ - numpy
+ - scipy
  - statsmodels 0.9.0
  - matplotlib
  - jinja2
@@ -27,34 +33,31 @@ or (recommended):
 ## Getting Started
 We recommend this [presentation](https://www.youtube.com/watch?v=GTgZfCltMm8) by Kay Brodersen (one of the creators of the causal impact implementation in R).
 
-We also created this introductory [ipython notebook](https://github.com/dafiti/causalimpact/blob/master/examples/getting_started.ipynb) with examples of how to use the package.
+We also created this introductory [ipython notebook](http://nbviewer.jupyter.org/github/dafiti/causalimpact/blob/master/examples/getting_started.ipynb) with examples of how to use this package.
 
 ### Simple Example
 Here's a simple example (which can also be found in the original Google's R implementation) running in python:
+
 ```python
 import numpy as np
 import pandas as pd
 from statsmodels.tsa.arima_process import ArmaProcess
 from causalimpact import CausalImpact
-
-
 np.random.seed(12345)
 ar = np.r_[1, 0.9]
 ma = np.array([1])
 arma_process = ArmaProcess(ar, ma)
-
 X = 100 + arma_process.generate_sample(nsample=100)
 y = 1.2 * X + np.random.normal(size=100)
 y[70:] += 1
 data = pd.DataFrame({'y': y, 'X': X}, columns=['y', 'X'])
 pre_period = [0, 69]
 post_period = [70, 99]
-
 ci = CausalImpact(data, pre_period, post_period)
-
 print(ci.summary())
 ci.plot()
 ```
+
 ![alt text](https://raw.githubusercontent.com/dafiti/causalimpact/master/examples/ci_plot.png)
 
 ## Contributing, Bugs, Questions
