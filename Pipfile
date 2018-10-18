@@ -14,6 +14,8 @@ jupyter = "*"
 
 [packages]
 causalimpact = {path = ".", editable = true}
+numpy = "*"
+scipy = "*"
 statsmodels = "*"
 matplotlib = "*"
 jinja2 = "*"
