@@ -11,6 +11,7 @@ tox = "*"
 ipython = "*"
 pytest-coverage = "*"
 jupyter = "*"
+mock = "*"
 
 [packages]
 causalimpact = {path = ".", editable = true}

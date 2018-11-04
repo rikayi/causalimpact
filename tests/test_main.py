@@ -27,6 +27,7 @@ of this file.
 
 import os
 
+import mock
 import numpy as np
 import pandas as pd
 import pytest
@@ -497,3 +498,38 @@ def test_default_causal_inferences_w_date(fix_path):
     assert round(ci.summary_data['cumulative']['rel_effect_upper'], 1) == 0.4
 
     assert round(ci.p_value, 1) == 0.0
+
+
+def test_default_model_fit(rand_data, pre_int_period, post_int_period, monkeypatch):
+    model_mock = mock.Mock()
+    construct_mock = mock.Mock(return_value=model_mock)
+
+    monkeypatch.setattr('causalimpact.main.CausalImpact._construct_default_model',
+        construct_mock)
+    monkeypatch.setattr('causalimpact.main.CausalImpact._process_posterior_inferences',
+        mock.Mock())
+
+    ci = CausalImpact(rand_data, pre_int_period, post_int_period)
+    model_mock.fit.assert_called_with(disp=False)
+
+    ci = CausalImpact(rand_data, pre_int_period, post_int_period, disp=True)
+    model_mock.fit.assert_called_with(disp=True)
+
+
+def test_custom_model_fit(rand_data, pre_int_period, post_int_period, monkeypatch):
+    fit_mock = mock.Mock()
+    monkeypatch.setattr('causalimpact.main.CausalImpact._process_posterior_inferences',
+        mock.Mock())
+
+    pre_data = rand_data.loc[pre_int_period[0]: pre_int_period[1], :]
+    post_data = rand_data.loc[post_int_period[0]: post_int_period[1], :]
+    model = UnobservedComponents(endog=pre_data.iloc[:, 0], level='llevel',
+                                 exog=pre_data.iloc[:, 1:])
+
+    model.fit = fit_mock
+
+    ci = CausalImpact(rand_data, pre_int_period, post_int_period, model=model)
+    fit_mock.assert_called_with(disp=False)
+
+    ci = CausalImpact(rand_data, pre_int_period, post_int_period, model=model, disp=True)
+    fit_mock.assert_called_with(disp=True)

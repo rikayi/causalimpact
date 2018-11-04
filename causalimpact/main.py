@@ -168,7 +168,7 @@ class CausalImpact(BaseCausal):
         super(CausalImpact, self).__init__(**checked_input)
         self.model_args = checked_input['model_args']
         self.model = checked_input['model']
-        self.trained_model = self.model.fit()
+        self.trained_model = self.model.fit(**checked_input['fit_args'])
         self._process_posterior_inferences()
 
     @property
@@ -302,6 +302,7 @@ class CausalImpact(BaseCausal):
         model_args = self._process_kwargs(**kwargs)
         if model:
             model = self._process_input_model(model)
+        fit_args = self._process_fit_args(kwargs)
         return {
             'data': processed_data,
             'pre_period': pre_period,
@@ -310,8 +311,33 @@ class CausalImpact(BaseCausal):
             'post_data': post_data,
             'model': model,
             'alpha': alpha,
-            'model_args':  model_args
+            'model_args':  model_args,
+            'fit_args': fit_args
         }
+
+    def _process_fit_args(self, kwargs):
+        """
+        Process the input that will be used in the fitting process for the model.
+
+        Args
+        ----
+          kwargs: dict
+                  Input kwargs for general options of the model. All keywords defined
+                  in `scipy.optimize.minimize` can be used here. For more details,
+                  please refer to:
+                  https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html
+
+            disp: bool
+                  Whether to display the logging of the `statsmodels` fitting process or
+                  not. Defaults to `False` which means not display any logging.
+
+        Returns
+        -------
+          kwargs: dict
+                  The arguments that will be used in the `fit` method.
+        """
+        kwargs.setdefault('disp', False)
+        return kwargs
 
     def _validate_y(self, y):
         """
