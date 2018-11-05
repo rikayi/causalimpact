@@ -120,6 +120,19 @@ class CausalImpact(BaseCausal):
         standardize: bool.
             If `True`, applies standardizes data to have zero mean and unitary standard
             deviation.
+        disp: bool.
+            Whether to print log associated to the `fit` method or not. `False` means no
+            printing.
+        prior_level_sd: float.
+            Prior value for the local level standard deviation. If the explicit value of
+            `None` is sent then an automatic optimization of the local level will take
+            place. This is recommended when there's uncertainty about what prior value is
+            appropriate for the data. In general, if the exogenous values are good
+            descriptors of the observed response then this value can be low
+            (such as the default of 0.01). In cases where there's not a complete
+            correlation between exogenous and endogenous variables, the value 0.1 can be
+            used, as suggested by Google. If no value is chosen at all, the value of
+            `0.01` will be used as default value.
 
     Returns
     -------
@@ -153,6 +166,14 @@ class CausalImpact(BaseCausal):
       >>> pre_period = ['20180101', '20180311']
       >>> post_period = ['20180312', '20180410']
       >>> ci = CausalImpact(df, pre_period, post_period)
+
+      Using automatic local level optimization:
+
+      >>> df = pd.DataFrame(data)
+      >>> df = df.set_index(pd.date_range(start='20180101', periods=len(data)))
+      >>> pre_period = ['20180101', '20180311']
+      >>> post_period = ['20180312', '20180410']
+      >>> ci = CausalImpact(df, pre_period, post_period, prior_level_sd=None)
 
       Using a customized model:
 
@@ -271,6 +292,8 @@ class CausalImpact(BaseCausal):
           alpha: float.
           kwargs:
             standardize: bool.
+            disp: bool.
+            prior_level_sd: float.
 
         Returns
         -------
@@ -283,7 +306,9 @@ class CausalImpact(BaseCausal):
             model: Either `None` or `UnobservedComponents` validated to be correct.
             alpha: float ranging from 0 to 1.
             model_args: dict containing general information related to how to process
-                        the causal impact algorithm.
+                the causal impact algorithm.
+            fit_args: dict containing general information related to how the fitting
+                process should take place.
 
         Raises
         ------
@@ -302,7 +327,8 @@ class CausalImpact(BaseCausal):
         model_args = self._process_kwargs(**kwargs)
         if model:
             model = self._process_input_model(model)
-        fit_args = self._process_fit_args(kwargs)
+        exog_dim = pre_data.shape[1] - 1  # Remove the y column.
+        fit_args = self._process_fit_args(model, exog_dim, kwargs)
         return {
             'data': processed_data,
             'pre_period': pre_period,
@@ -315,28 +341,48 @@ class CausalImpact(BaseCausal):
             'fit_args': fit_args
         }
 
-    def _process_fit_args(self, kwargs):
+    def _process_fit_args(self, model, exog_dim, kwargs):
         """
         Process the input that will be used in the fitting process for the model.
 
         Args
         ----
-          kwargs: dict
-                  Input kwargs for general options of the model. All keywords defined
-                  in `scipy.optimize.minimize` can be used here. For more details,
-                  please refer to:
-                  https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html
+          model: `UnobservedComponents` from statsmodels.
+              If `None` them it means the fitting process will work with default model.
+              Process level information of customized model otherwise.
+          exog_dim: int.
+              Dimension of input exog.
+          kwargs: dict.
+              Input kwargs for general options of the model. All keywords defined
+              in `scipy.optimize.minimize` can be used here. For more details,
+              please refer to:
+              https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html
 
-            disp: bool
-                  Whether to display the logging of the `statsmodels` fitting process or
-                  not. Defaults to `False` which means not display any logging.
+            disp: bool.
+                Whether to display the logging of the `statsmodels` fitting process or
+                not. Defaults to `False` which means not display any logging.
+
+            prior_level_sd: float.
+                Prior value to be used as reference for the fitting process.
 
         Returns
         -------
           kwargs: dict
-                  The arguments that will be used in the `fit` method.
+              The arguments that will be used in the `fit` method.
         """
         kwargs.setdefault('disp', False)
+        level_sd = kwargs.get('prior_level_sd', 0.01)
+        n_params = len(model.param_names) if model else 2 + exog_dim
+        level_idx = [1] if model is None else [idx for (idx, name) in enumerate(
+            model.param_names) if name == 'sigma2.level']
+        bounds = [(None, None) for _ in range(n_params)]
+        if level_idx:  # If chosen model do not have level defined then this is None.
+            level_idx = level_idx[0]
+            bounds[level_idx] = (
+                level_sd / 1.2 if level_sd is not None else None,
+                level_sd * 1.2 if level_sd is not None else None
+            )
+        kwargs.setdefault('bounds', bounds)
         return kwargs
 
     def _validate_y(self, y):
@@ -345,7 +391,7 @@ class CausalImpact(BaseCausal):
 
         Args
         ----
-          y: pandas Series
+          y: pandas Series.
              Response variable sent in input data in first column.
 
         Raises

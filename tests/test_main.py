@@ -440,25 +440,25 @@ def test_default_causal_inferences(fix_path):
     ci = CausalImpact(data, pre_period, post_period)
     assert int(ci.summary_data['average']['actual']) == 156
     assert int(ci.summary_data['average']['predicted']) == 129
-    assert int(ci.summary_data['average']['predicted_lower']) == 102
-    assert int(ci.summary_data['average']['predicted_upper']) == 156
-    assert int(ci.summary_data['average']['abs_effect']) == 26
-    assert round(ci.summary_data['average']['abs_effect_lower'], 1) == -0.2
-    assert int(ci.summary_data['average']['abs_effect_upper']) == 53
+    assert int(ci.summary_data['average']['predicted_lower']) == 124
+    assert int(ci.summary_data['average']['predicted_upper']) == 134
+    assert int(ci.summary_data['average']['abs_effect']) == 27
+    assert round(ci.summary_data['average']['abs_effect_lower'], 1) == 21.6
+    assert int(ci.summary_data['average']['abs_effect_upper']) == 31
     assert round(ci.summary_data['average']['rel_effect'], 1) == 0.2
-    assert round(ci.summary_data['average']['rel_effect_lower'], 1) == 0.0
-    assert round(ci.summary_data['average']['rel_effect_upper'], 1) == 0.4
+    assert round(ci.summary_data['average']['rel_effect_lower'], 2) == 0.17
+    assert round(ci.summary_data['average']['rel_effect_upper'], 2) == 0.25
 
     assert int(ci.summary_data['cumulative']['actual']) == 4687
-    assert int(ci.summary_data['cumulative']['predicted']) == 3883
-    assert int(ci.summary_data['cumulative']['predicted_lower']) == 3085
-    assert int(ci.summary_data['cumulative']['predicted_upper']) == 4693
-    assert int(ci.summary_data['cumulative']['abs_effect']) == 803
-    assert round(ci.summary_data['cumulative']['abs_effect_lower'], 1) == -6.8
-    assert int(ci.summary_data['cumulative']['abs_effect_upper']) == 1601
+    assert int(ci.summary_data['cumulative']['predicted']) == 3876
+    assert int(ci.summary_data['cumulative']['predicted_lower']) == 3729
+    assert int(ci.summary_data['cumulative']['predicted_upper']) == 4040
+    assert int(ci.summary_data['cumulative']['abs_effect']) == 810
+    assert int(ci.summary_data['cumulative']['abs_effect_lower']) == 646
+    assert int(ci.summary_data['cumulative']['abs_effect_upper']) == 957
     assert round(ci.summary_data['cumulative']['rel_effect'], 1) == 0.2
-    assert round(ci.summary_data['cumulative']['rel_effect_lower'], 1) == 0.0
-    assert round(ci.summary_data['cumulative']['rel_effect_upper'], 1) == 0.4
+    assert round(ci.summary_data['cumulative']['rel_effect_lower'], 2) == 0.17
+    assert round(ci.summary_data['cumulative']['rel_effect_upper'], 2) == 0.25
 
     assert round(ci.p_value, 1) == 0.0
 
@@ -477,25 +477,25 @@ def test_default_causal_inferences_w_date(fix_path):
     ci = CausalImpact(data, pre_period, post_period)
     assert int(ci.summary_data['average']['actual']) == 156
     assert int(ci.summary_data['average']['predicted']) == 129
-    assert int(ci.summary_data['average']['predicted_lower']) == 102
-    assert int(ci.summary_data['average']['predicted_upper']) == 156
-    assert int(ci.summary_data['average']['abs_effect']) == 26
-    assert round(ci.summary_data['average']['abs_effect_lower'], 1) == -0.2
-    assert int(ci.summary_data['average']['abs_effect_upper']) == 53
+    assert int(ci.summary_data['average']['predicted_lower']) == 124
+    assert int(ci.summary_data['average']['predicted_upper']) == 134
+    assert int(ci.summary_data['average']['abs_effect']) == 27
+    assert round(ci.summary_data['average']['abs_effect_lower'], 1) == 21.6
+    assert int(ci.summary_data['average']['abs_effect_upper']) == 31
     assert round(ci.summary_data['average']['rel_effect'], 1) == 0.2
-    assert round(ci.summary_data['average']['rel_effect_lower'], 1) == 0.0
-    assert round(ci.summary_data['average']['rel_effect_upper'], 1) == 0.4
+    assert round(ci.summary_data['average']['rel_effect_lower'], 2) == 0.17
+    assert round(ci.summary_data['average']['rel_effect_upper'], 2) == 0.25
 
     assert int(ci.summary_data['cumulative']['actual']) == 4687
-    assert int(ci.summary_data['cumulative']['predicted']) == 3883
-    assert int(ci.summary_data['cumulative']['predicted_lower']) == 3085
-    assert int(ci.summary_data['cumulative']['predicted_upper']) == 4693
-    assert int(ci.summary_data['cumulative']['abs_effect']) == 803
-    assert round(ci.summary_data['cumulative']['abs_effect_lower'], 1) == -6.8
-    assert int(ci.summary_data['cumulative']['abs_effect_upper']) == 1601
+    assert int(ci.summary_data['cumulative']['predicted']) == 3876
+    assert int(ci.summary_data['cumulative']['predicted_lower']) == 3729
+    assert int(ci.summary_data['cumulative']['predicted_upper']) == 4040
+    assert int(ci.summary_data['cumulative']['abs_effect']) == 810
+    assert int(ci.summary_data['cumulative']['abs_effect_lower']) == 646
+    assert int(ci.summary_data['cumulative']['abs_effect_upper']) == 957
     assert round(ci.summary_data['cumulative']['rel_effect'], 1) == 0.2
-    assert round(ci.summary_data['cumulative']['rel_effect_lower'], 1) == 0.0
-    assert round(ci.summary_data['cumulative']['rel_effect_upper'], 1) == 0.4
+    assert round(ci.summary_data['cumulative']['rel_effect_lower'], 2) == 0.17
+    assert round(ci.summary_data['cumulative']['rel_effect_upper'], 2) == 0.25
 
     assert round(ci.p_value, 1) == 0.0
 
@@ -510,10 +510,39 @@ def test_default_model_fit(rand_data, pre_int_period, post_int_period, monkeypat
         mock.Mock())
 
     ci = CausalImpact(rand_data, pre_int_period, post_int_period)
-    model_mock.fit.assert_called_with(disp=False)
+    model_mock.fit.assert_called_with(
+        bounds=[(None, None), (0.01 / 1.2, 0.012), (None, None), (None, None)],
+        disp=False
+    )
 
     ci = CausalImpact(rand_data, pre_int_period, post_int_period, disp=True)
-    model_mock.fit.assert_called_with(disp=True)
+    model_mock.fit.assert_called_with(
+        bounds=[(None, None), (0.01 / 1.2, 0.012), (None, None), (None, None)],
+        disp=True
+    )
+
+    ci = CausalImpact(rand_data, pre_int_period, post_int_period, disp=True,
+                      prior_level_sd=0.1)
+    model_mock.fit.assert_called_with(
+        bounds=[(None, None), (0.1 / 1.2, 0.1 * 1.2), (None, None), (None, None)],
+        disp=True,
+        prior_level_sd=0.1
+    )
+
+    ci = CausalImpact(rand_data, pre_int_period, post_int_period, disp=True,
+                      prior_level_sd=None)
+    model_mock.fit.assert_called_with(
+        bounds=[(None, None), (None, None), (None, None), (None, None)],
+        disp=True,
+        prior_level_sd=None
+    )
+
+    new_data = pd.DataFrame(np.random.randn(200, 1), columns=['y'])
+    ci = CausalImpact(new_data, pre_int_period, post_int_period, disp=False)
+    model_mock.fit.assert_called_with(
+        bounds=[(None, None), (0.01 / 1.2, 0.01 * 1.2)],
+        disp=False,
+    )
 
 
 def test_custom_model_fit(rand_data, pre_int_period, post_int_period, monkeypatch):
@@ -529,7 +558,65 @@ def test_custom_model_fit(rand_data, pre_int_period, post_int_period, monkeypatc
     model.fit = fit_mock
 
     ci = CausalImpact(rand_data, pre_int_period, post_int_period, model=model)
-    fit_mock.assert_called_with(disp=False)
+    fit_mock.assert_called_with(
+        bounds=[(None, None), (0.01 / 1.2, 0.01 * 1.2), (None, None), (None, None)],
+        disp=False
+    )
 
     ci = CausalImpact(rand_data, pre_int_period, post_int_period, model=model, disp=True)
-    fit_mock.assert_called_with(disp=True)
+    fit_mock.assert_called_with(
+        bounds=[(None, None), (0.01 / 1.2, 0.01 * 1.2), (None, None), (None, None)],
+        disp=True
+    )
+
+    ci = CausalImpact(rand_data, pre_int_period, post_int_period, model=model, disp=True,
+        prior_level_sd=0.01)
+    fit_mock.assert_called_with(
+        bounds=[(None, None), (0.01 / 1.2, 0.01 * 1.2), (None, None), (None, None)],
+        disp=True,
+        prior_level_sd=0.01
+    )
+
+    ci = CausalImpact(rand_data, pre_int_period, post_int_period, model=model, disp=True,
+        prior_level_sd=None)
+    fit_mock.assert_called_with(
+        bounds=[(None, None), (None, None), (None, None), (None, None)],
+        disp=True,
+        prior_level_sd=None
+    )
+
+    new_pre_data = rand_data.loc[pre_int_period[0]: pre_int_period[1], ['y', 'x1']]
+    new_post_data = rand_data.loc[post_int_period[0]: post_int_period[1], ['y', 'x1']]
+    model = UnobservedComponents(endog=new_pre_data.iloc[:, 0], level='llevel',
+        exog=new_pre_data.iloc[:, 1:])
+
+    model.fit = fit_mock
+
+    ci = CausalImpact(rand_data, pre_int_period, post_int_period, model=model,
+        disp=False)
+    fit_mock.assert_called_with(
+        bounds=[(None, None), (0.01 / 1.2, 0.01 * 1.2), (None, None)],
+        disp=False,
+    )
+
+    model = UnobservedComponents(endog=new_pre_data.iloc[:, 0], level='dtrend',
+        exog=new_pre_data.iloc[:, 1:])
+    model.fit = fit_mock
+
+    ci = CausalImpact(rand_data, pre_int_period, post_int_period, model=model,
+        disp=False)
+    fit_mock.assert_called_with(
+        bounds=[(None, None), (None, None)],
+        disp=False,
+    )
+
+    model = UnobservedComponents(endog=new_pre_data.iloc[:, 0], level='lltrend',
+        exog=new_pre_data.iloc[:, 1:])
+    model.fit = fit_mock
+
+    ci = CausalImpact(rand_data, pre_int_period, post_int_period, model=model,
+        disp=False)
+    fit_mock.assert_called_with(
+        bounds=[(None, None), (0.01 / 1.2, 0.01 * 1.2), (None, None), (None, None)],
+        disp=False,
+    )
