@@ -36,7 +36,7 @@ We recommend this [presentation](https://www.youtube.com/watch?v=GTgZfCltMm8) by
 We also created this introductory [ipython notebook](http://nbviewer.jupyter.org/github/dafiti/causalimpact/blob/master/examples/getting_started.ipynb) with examples of how to use this package.
 
 ### Simple Example
-Here's a simple example (which can also be found in the original Google's R implementation) running in python:
+Here's a simple example (which can also be found in the original Google's R implementation) running in Python:
 
 ```python
 import numpy as np
@@ -49,7 +49,7 @@ ma = np.array([1])
 arma_process = ArmaProcess(ar, ma)
 X = 100 + arma_process.generate_sample(nsample=100)
 y = 1.2 * X + np.random.normal(size=100)
-y[70:] += 1
+y[70:] += 5
 data = pd.DataFrame({'y': y, 'X': X}, columns=['y', 'X'])
 pre_period = [0, 69]
 post_period = [70, 99]
