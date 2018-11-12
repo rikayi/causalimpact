@@ -20,6 +20,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-VERSION = (0, 0, 5)
+VERSION = (0, 0, 6)
 
 __version__ = '.'.join([str(e) for e in VERSION])

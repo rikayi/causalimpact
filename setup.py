@@ -51,7 +51,8 @@ test_requires = [
     'pytest-coverage',
     'flake8',
     'isort',
-    'tox'
+    'tox',
+    'mock'
 ]
 
 packages = ['causalimpact']
@@ -79,7 +80,7 @@ setup(
     test_requires=test_requires,
     license='MIT',
     classifiers=[
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
         'Environment :: Console',
         'Intended Audience :: Developers',
         'Intended Audience :: Science/Research',
