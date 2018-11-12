@@ -78,7 +78,7 @@ class BaseCausal(Inferences, Summary, Plot):
 class CausalImpact(BaseCausal):
     """
     Main class used to run the Causal Impact algorithm implemented by Google as
-    described in their paper:
+    described in the paper:
 
     https://google.github.io/CausalImpact/CausalImpact.html
 
@@ -133,6 +133,28 @@ class CausalImpact(BaseCausal):
             correlation between exogenous and endogenous variables, the value 0.1 can be
             used, as suggested by Google. If no value is chosen at all, the value of
             `0.01` will be used as default value.
+        nseasons: list of dicts.
+            Models for `n` seasonal components in input response data. A seasonal
+            component can be described as a pattern that repeats itself with peridiocity
+            `s`. In `statsmodels` library, we have the option of doing so by using either
+            the parameter `seasonal`, which uses `(s-1)` variables for each point of the
+            series, or `freq_seasonal`, which is the one used in this package.
+            The difference is that in the latter the equations are expressed in the
+            frequency domain and accepts more than one seasonal component, such as a
+            weekly and another monthly ones. If, for instance, in the input daily data has
+            a known weekly and a montly seasonal components, then this paramter can be
+            used like:
+            `nseasons=[{'period': 7}, {'period': 30}]`. You can also specify how many
+            harmonics should be used to express the final value, such as:
+            `nseasons=[{'period': 7, 'harmonics': 3}, {'period': 30, 'harmonics': 5}]`.
+            If no value is used for `harmonics`, its total amount `h` will be considered
+            to be :math:`floor(s/2)`. Default value is [] meaning no seasonal component
+            should be modeled in the fitting process. For more information, please refer
+            to statsmodels docs:
+
+            https://www.statsmodels.org/dev/generated/statsmodels.tsa.statespace.structural.UnobservedComponents.html
+            If a custom model is used then it should already contain the definition of
+            the seasonal components.
 
     Returns
     -------
@@ -175,6 +197,14 @@ class CausalImpact(BaseCausal):
       >>> post_period = ['20180312', '20180410']
       >>> ci = CausalImpact(df, pre_period, post_period, prior_level_sd=None)
 
+      Using seasonal components:
+
+      >>> df = pd.DataFrame(data)
+      >>> df = df.set_index(pd.date_range(start='20180101', periods=len(data)))
+      >>> pre_period = ['20180101', '20180311']
+      >>> post_period = ['20180312', '20180410']
+      >>> ci = CausalImpact(df, pre_period, post_period, nseasons=[{'period': 7}])
+
       Using a customized model:
 
       >>> pre_y = data[:70, 0]
@@ -189,7 +219,7 @@ class CausalImpact(BaseCausal):
         super(CausalImpact, self).__init__(**checked_input)
         self.model_args = checked_input['model_args']
         self.model = checked_input['model']
-        self.trained_model = self.model.fit(**checked_input['fit_args'])
+        self._fit_model()
         self._process_posterior_inferences()
 
     @property
@@ -213,6 +243,7 @@ class CausalImpact(BaseCausal):
         ----
           value: dict
               standardize: bool.
+              nseasons: list of dicts.
         """
         if value.get('standardize'):
             self._standardize_pre_post_data()
@@ -236,9 +267,17 @@ class CausalImpact(BaseCausal):
           value: `UnobservedComponents`.
         """
         if value is None:
-            self._model = self._construct_default_model()
+            self._model = self._get_default_model()
         else:
             self._model = value
+
+    def _fit_model(self):
+        """
+        Uses the built model, prepares the arguments and fits the kalman filter for the
+        inferences phase.
+        """
+        fit_args = self._process_fit_args()
+        self.trained_model = self.model.fit(**fit_args)
 
     def _standardize_pre_post_data(self):
         """
@@ -260,8 +299,9 @@ class CausalImpact(BaseCausal):
         self._compile_posterior_inferences()
         self._summarize_posterior_inferences()
 
-    def _construct_default_model(self):
-        """Constructs default local level unobserved states model with input data.
+    def _get_default_model(self):
+        """Constructs default local level unobserved states model using input data and
+        `self.model_args`.
 
         Returns
         -------
@@ -271,7 +311,9 @@ class CausalImpact(BaseCausal):
         data = self.pre_data if self.normed_pre_data is None else self.normed_pre_data
         y = data.iloc[:, 0]
         X = data.iloc[:, 1:] if data.shape[1] > 1 else None
-        model = UnobservedComponents(endog=y, level='llevel', exog=X)
+        freq_seasonal = self.model_args.get('nseasons')
+        model = UnobservedComponents(endog=y, level='llevel', exog=X,
+                                     freq_seasonal=freq_seasonal)
         return model
 
     def _process_input_data(self, data, pre_period, post_period, model, alpha, **kwargs):
@@ -294,6 +336,7 @@ class CausalImpact(BaseCausal):
             standardize: bool.
             disp: bool.
             prior_level_sd: float.
+            nseasons: list of dicts.
 
         Returns
         -------
@@ -307,12 +350,10 @@ class CausalImpact(BaseCausal):
             alpha: float ranging from 0 to 1.
             model_args: dict containing general information related to how to process
                 the causal impact algorithm.
-            fit_args: dict containing general information related to how the fitting
-                process should take place.
 
         Raises
         ------
-          ValueError: if input arguments are `None`.
+          ValueError: if input arguments is `None`.
         """
         input_args = locals().copy()
         model = input_args.pop('model')
@@ -324,11 +365,9 @@ class CausalImpact(BaseCausal):
         pre_data, post_data = self._process_pre_post_data(processed_data, pre_period,
                                                           post_period)
         alpha = self._process_alpha(alpha)
-        model_args = self._process_kwargs(**kwargs)
+        model_args = self._process_model_args(**kwargs)
         if model:
             model = self._process_input_model(model)
-        exog_dim = pre_data.shape[1] - 1  # Remove the y column.
-        fit_args = self._process_fit_args(model, exog_dim, kwargs)
         return {
             'data': processed_data,
             'pre_period': pre_period,
@@ -337,53 +376,54 @@ class CausalImpact(BaseCausal):
             'post_data': post_data,
             'model': model,
             'alpha': alpha,
-            'model_args':  model_args,
-            'fit_args': fit_args
+            'model_args':  model_args
         }
 
-    def _process_fit_args(self, model, exog_dim, kwargs):
+    def _process_fit_args(self):
         """
         Process the input that will be used in the fitting process for the model.
 
         Args
         ----
-          model: `UnobservedComponents` from statsmodels.
-              If `None` them it means the fitting process will work with default model.
-              Process level information of customized model otherwise.
-          exog_dim: int.
-              Dimension of input exog.
-          kwargs: dict.
-              Input kwargs for general options of the model. All keywords defined
-              in `scipy.optimize.minimize` can be used here. For more details,
-              please refer to:
-              https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html
+          self:
+            model: `UnobservedComponents` from statsmodels.
+                If `None` them it means the fitting process will work with default model.
+                Process level information of customized model otherwise.
+            model_args: dict.
+                Input args for general options of the model. All keywords defined
+                in `scipy.optimize.minimize` can be used here. For more details,
+                please refer to:
+                https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html
 
-            disp: bool.
-                Whether to display the logging of the `statsmodels` fitting process or
-                not. Defaults to `False` which means not display any logging.
+              disp: bool.
+                  Whether to display the logging of the `statsmodels` fitting process or
+                  not. Defaults to `False` which means not display any logging.
 
-            prior_level_sd: float.
-                Prior value to be used as reference for the fitting process.
+              prior_level_sd: float.
+                  Prior value to be used as reference for the fitting process.
 
         Returns
         -------
-          kwargs: dict
+          model_args: dict
               The arguments that will be used in the `fit` method.
         """
-        kwargs.setdefault('disp', False)
-        level_sd = kwargs.get('prior_level_sd', 0.01)
-        n_params = len(model.param_names) if model else 2 + exog_dim
-        level_idx = [1] if model is None else [idx for (idx, name) in enumerate(
-            model.param_names) if name == 'sigma2.level']
-        bounds = [(None, None) for _ in range(n_params)]
+        fit_args = self.model_args.copy()
+        fit_args.setdefault('disp', False)
+        level_sd = fit_args.get('prior_level_sd', 0.01)
+        n_params = len(self.model.param_names)
+        level_idx = [idx for (idx, name) in enumerate(self.model.param_names) if
+                     name == 'sigma2.level']
+        bounds = [(None, None)] * n_params
         if level_idx:  # If chosen model do not have level defined then this is None.
             level_idx = level_idx[0]
+            # We make the maximum relative variation be up to 20% in order to simulate
+            # an approximate behavior of the respective algorithm implemented in R.
             bounds[level_idx] = (
                 level_sd / 1.2 if level_sd is not None else None,
                 level_sd * 1.2 if level_sd is not None else None
             )
-        kwargs.setdefault('bounds', bounds)
-        return kwargs
+        fit_args.setdefault('bounds', bounds)
+        return fit_args
 
     def _validate_y(self, y):
         """
@@ -469,32 +509,55 @@ class CausalImpact(BaseCausal):
             raise ValueError('Model must have data attribute set.')
         return model
 
-    def _process_kwargs(self, **kwargs):
+    def _process_model_args(self, **kwargs):
         """
-        Process general options related to how Causal Impact will be implemented.
+        Process general parameters related to how Causal Impact will be implemented, such
+        as standardization procedure or the addition of seasonal components to the model.
 
         Args
         ----
           kwargs:
             standardize: bool.
+            nseasons: list of dicts.
+            other keys used in fitting process.
 
         Returns
         -------
           dict of:
             standardize: bool.
+            nseasons: list of dicts.
+            other keys used in fitting process.
 
         Raises
         ------
           ValueError: if standardize is not of type `bool`.
+                      if nseasons doesn't follow the pattern [{str key: number}].
         """
         standardize = kwargs.get('standardize')
         if standardize is None:
             standardize = True  # Default behaviour is to set standardization to True.
         if not isinstance(standardize, bool):
             raise ValueError('Standardize argument must be of type bool.')
-        return {
-            'standardize': standardize
-        }
+        kwargs['standardize'] = standardize
+        nseasons = kwargs.get('nseasons')
+        if nseasons is None:
+            nseasons = []
+        for season in nseasons:
+            if not isinstance(season, dict):
+                raise ValueError(
+                    'nseasons must be a list of dicts with the required key "period" '
+                    'and the optional key "harmonics".'
+                )
+            if 'period' not in season:
+                raise ValueError('nseasons dicts must contain the key "period" defined.')
+            if 'harmonics' in season:
+                if season.get('harmonics') > season['period'] / 2:
+                    raise ValueError(
+                        'Total harmonics must be less or equal than periods '
+                        'divided by 2.'
+                    )
+        kwargs['nseasons'] = nseasons
+        return kwargs
 
     def _format_input_data(self, data):
         """

@@ -27,9 +27,8 @@ based model.
 
 import numpy as np
 import pandas as pd
-from statsmodels.tsa.statespace.structural import UnobservedComponents
 
-from causalimpact.misc import unstandardize
+from causalimpact.misc import get_referenced_model, unstandardize
 
 
 class Inferences(object):
@@ -119,13 +118,12 @@ class Inferences(object):
             simulations = []
             # For more information about the `trend` and how it works, please refer to:
             # https://www.statsmodels.org/dev/generated/statsmodels.tsa.statespace.structural.UnobservedComponents.html
-            trend = self.model.trend_specification
             y = np.zeros(len(self.post_data))
             exog_data = self.post_data if self.mu_sig is None else self.normed_post_data
             X = exog_data.iloc[:, 1:] if exog_data.shape[1] > 1 else None
-            model = UnobservedComponents(y, level=trend, exog=X)
-            # `params` is related to the parameters found when fitting the Kalman filter
-            # from the observed time series.
+            model = get_referenced_model(self.model, y, X)
+            # `params` is related to the parameters found when fitting the structural
+            # components that best describes the observed time series.
             params = self.trained_model.params
             predicted_state = self.trained_model.predicted_state[..., -1]
             predicted_state_cov = self.trained_model.predicted_state_cov[..., -1]

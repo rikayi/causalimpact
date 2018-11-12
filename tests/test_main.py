@@ -60,7 +60,7 @@ def test_default_causal_cto(rand_data, pre_int_period, post_int_period):
     assert_frame_equal(ci.normed_post_data, normed_post_data)
 
     assert ci.mu_sig == (mu[0], sig[0])
-    assert ci.model_args == {'standardize': True}
+    assert ci.model_args == {'standardize': True, 'nseasons': []}
 
     assert isinstance(ci.model, UnobservedComponents)
     assert_array_equal(ci.model.endog, normed_pre_data.iloc[:, 0].values.reshape(-1, 1))
@@ -102,7 +102,7 @@ def test_default_causal_cto_w_date(date_rand_data, pre_str_period, post_str_peri
     assert_frame_equal(ci.normed_post_data, normed_post_data)
 
     assert ci.mu_sig == (mu[0], sig[0])
-    assert ci.model_args == {'standardize': True}
+    assert ci.model_args == {'standardize': True, 'nseasons': []}
 
     assert isinstance(ci.model, UnobservedComponents)
     assert_array_equal(ci.model.endog, normed_pre_data.iloc[:, 0].values.reshape(-1, 1))
@@ -145,7 +145,7 @@ def test_default_causal_cto_no_exog(rand_data, pre_int_period, post_int_period):
     assert_frame_equal(ci.normed_post_data, normed_post_data)
 
     assert ci.mu_sig == (mu[0], sig[0])
-    assert ci.model_args == {'standardize': True}
+    assert ci.model_args == {'standardize': True, 'nseasons': []}
 
     assert isinstance(ci.model, UnobservedComponents)
     assert_array_equal(ci.model.endog, normed_pre_data.iloc[:, 0].values.reshape(-1, 1))
@@ -185,7 +185,7 @@ def test_default_causal_cto_w_np_array(rand_data, pre_int_period, post_int_perio
     assert_frame_equal(ci.normed_post_data, normed_post_data)
 
     assert ci.mu_sig == (mu[0], sig[0])
-    assert ci.model_args == {'standardize': True}
+    assert ci.model_args == {'standardize': True, 'nseasons': []}
 
     assert isinstance(ci.model, UnobservedComponents)
     assert_array_equal(ci.model.endog, normed_pre_data.iloc[:, 0].values.reshape(-1, 1))
@@ -222,6 +222,33 @@ def test_causal_cto_w_no_standardization(rand_data, pre_int_period, post_int_per
         )
     )
     assert ci.p_value > 0 and ci.p_value < 1
+
+
+def test_causal_cto_w_seasons(date_rand_data, pre_str_period, post_str_period):
+    ci = CausalImpact(date_rand_data, pre_str_period, post_str_period,
+                      nseasons=[{'period': 4}, {'period': 3}])
+    assert ci.model.freq_seasonal_periods == [4, 3]
+    assert ci.model.freq_seasonal_harmonics == [2, 1]
+
+    ci = CausalImpact(date_rand_data, pre_str_period, post_str_period,
+                      nseasons=[{'period': 4, 'harmonics': 1},
+                                {'period': 3, 'harmonis': 1}])
+    assert ci.model.freq_seasonal_periods == [4, 3]
+    assert ci.model.freq_seasonal_harmonics == [1, 1]
+
+
+def test_causal_cto_w_custom_model_and_seasons(rand_data, pre_int_period,
+                                               post_int_period):
+    pre_data = rand_data.loc[pre_int_period[0]: pre_int_period[1], :]
+    post_data = rand_data.loc[post_int_period[0]: post_int_period[1], :]
+    model = UnobservedComponents(endog=pre_data.iloc[:, 0], level='llevel',
+                                 exog=pre_data.iloc[:, 1:],
+                                 freq_seasonal=[{'period': 4}, {'period': 3}])
+
+    ci = CausalImpact(rand_data, pre_int_period, post_int_period, model=model)
+
+    assert ci.model.freq_seasonal_periods == [4, 3]
+    assert ci.model.freq_seasonal_harmonics == [2, 1]
 
 
 def test_causal_cto_w_custom_model(rand_data, pre_int_period, post_int_period):
@@ -335,6 +362,25 @@ def test_kwargs_validation(rand_data, pre_int_period, post_int_period):
         ci = CausalImpact(rand_data, pre_int_period, post_int_period,
                           standardize='yes')
     assert str(excinfo.value) == 'Standardize argument must be of type bool.'
+
+    with pytest.raises(ValueError) as excinfo:
+        ci = CausalImpact(rand_data, pre_int_period, post_int_period,
+                          standardize=False, nseasons=[7])
+    assert str(excinfo.value) == (
+        'nseasons must be a list of dicts with the required key "period" and the '
+        'optional key "harmonics".'
+        )
+
+    with pytest.raises(ValueError) as excinfo:
+        ci = CausalImpact(rand_data, pre_int_period, post_int_period,
+                          standardize=False, nseasons=[{'test': 8}])
+    assert str(excinfo.value) == 'nseasons dicts must contain the key "period" defined.'
+
+    with pytest.raises(ValueError) as excinfo:
+        ci = CausalImpact(rand_data, pre_int_period, post_int_period,
+                          standardize=False, nseasons=[{'period': 4, 'harmonics': 3}])
+    assert str(excinfo.value) == (
+        'Total harmonics must be less or equal than periods divided by 2.')
 
 
 def test_periods_validation(rand_data, date_rand_data):
@@ -501,47 +547,96 @@ def test_default_causal_inferences_w_date(fix_path):
 
 
 def test_default_model_fit(rand_data, pre_int_period, post_int_period, monkeypatch):
-    model_mock = mock.Mock()
-    construct_mock = mock.Mock(return_value=model_mock)
+    pre_data = rand_data.loc[pre_int_period[0]: pre_int_period[1], :]
+    post_data = rand_data.loc[post_int_period[0]: post_int_period[1], :]
+    fit_mock = mock.Mock()
+    model = UnobservedComponents(endog=pre_data.iloc[:, 0], level='llevel',
+                                 exog=pre_data.iloc[:, 1:])
 
-    monkeypatch.setattr('causalimpact.main.CausalImpact._construct_default_model',
+    model.fit = fit_mock
+
+
+    construct_mock = mock.Mock(return_value=model)
+
+    monkeypatch.setattr('causalimpact.main.CausalImpact._get_default_model',
         construct_mock)
     monkeypatch.setattr('causalimpact.main.CausalImpact._process_posterior_inferences',
         mock.Mock())
 
     ci = CausalImpact(rand_data, pre_int_period, post_int_period)
-    model_mock.fit.assert_called_with(
+    model.fit.assert_called_with(
         bounds=[(None, None), (0.01 / 1.2, 0.012), (None, None), (None, None)],
-        disp=False
+        disp=False,
+        nseasons=[],
+        standardize=True
     )
 
     ci = CausalImpact(rand_data, pre_int_period, post_int_period, disp=True)
-    model_mock.fit.assert_called_with(
+    model.fit.assert_called_with(
         bounds=[(None, None), (0.01 / 1.2, 0.012), (None, None), (None, None)],
-        disp=True
+        disp=True,
+        nseasons=[],
+        standardize=True
     )
 
     ci = CausalImpact(rand_data, pre_int_period, post_int_period, disp=True,
                       prior_level_sd=0.1)
-    model_mock.fit.assert_called_with(
+    model.fit.assert_called_with(
         bounds=[(None, None), (0.1 / 1.2, 0.1 * 1.2), (None, None), (None, None)],
         disp=True,
-        prior_level_sd=0.1
+        prior_level_sd=0.1,
+        nseasons=[],
+        standardize=True
     )
 
     ci = CausalImpact(rand_data, pre_int_period, post_int_period, disp=True,
                       prior_level_sd=None)
-    model_mock.fit.assert_called_with(
+    model.fit.assert_called_with(
         bounds=[(None, None), (None, None), (None, None), (None, None)],
         disp=True,
-        prior_level_sd=None
+        prior_level_sd=None,
+        nseasons=[],
+        standardize=True
     )
+
+    model = UnobservedComponents(endog=pre_data.iloc[:, 0], level='llevel',
+                                 exog=pre_data.iloc[:, 1:],
+                                 freq_seasonal=[{'period': 3}])
+
+    model.fit = fit_mock
+
+    construct_mock = mock.Mock(return_value=model)
+
+    monkeypatch.setattr('causalimpact.main.CausalImpact._get_default_model',
+        construct_mock)
+
+    ci = CausalImpact(rand_data, pre_int_period, post_int_period, disp=True,
+                      prior_level_sd=0.001, nseasons=[{'period': 3}])
+    model.fit.assert_called_with(
+        bounds=[(None, None), (0.001 / 1.2, 0.001 * 1.2), (None, None), (None, None),
+                (None, None)],
+        disp=True,
+        prior_level_sd=0.001,
+        nseasons=[{'period': 3}],
+        standardize=True
+    )
+
+    model = UnobservedComponents(endog=pre_data.iloc[:, 0], level='llevel')
+
+    model.fit = fit_mock
+
+    construct_mock = mock.Mock(return_value=model)
+
+    monkeypatch.setattr('causalimpact.main.CausalImpact._get_default_model',
+        construct_mock)
 
     new_data = pd.DataFrame(np.random.randn(200, 1), columns=['y'])
     ci = CausalImpact(new_data, pre_int_period, post_int_period, disp=False)
-    model_mock.fit.assert_called_with(
+    model.fit.assert_called_with(
         bounds=[(None, None), (0.01 / 1.2, 0.01 * 1.2)],
         disp=False,
+        nseasons=[],
+        standardize=True
     )
 
 
@@ -560,13 +655,17 @@ def test_custom_model_fit(rand_data, pre_int_period, post_int_period, monkeypatc
     ci = CausalImpact(rand_data, pre_int_period, post_int_period, model=model)
     fit_mock.assert_called_with(
         bounds=[(None, None), (0.01 / 1.2, 0.01 * 1.2), (None, None), (None, None)],
-        disp=False
+        disp=False,
+        nseasons=[],
+        standardize=True
     )
 
     ci = CausalImpact(rand_data, pre_int_period, post_int_period, model=model, disp=True)
     fit_mock.assert_called_with(
         bounds=[(None, None), (0.01 / 1.2, 0.01 * 1.2), (None, None), (None, None)],
-        disp=True
+        disp=True,
+        nseasons=[],
+        standardize=True
     )
 
     ci = CausalImpact(rand_data, pre_int_period, post_int_period, model=model, disp=True,
@@ -574,7 +673,9 @@ def test_custom_model_fit(rand_data, pre_int_period, post_int_period, monkeypatc
     fit_mock.assert_called_with(
         bounds=[(None, None), (0.01 / 1.2, 0.01 * 1.2), (None, None), (None, None)],
         disp=True,
-        prior_level_sd=0.01
+        prior_level_sd=0.01,
+        nseasons=[],
+        standardize=True
     )
 
     ci = CausalImpact(rand_data, pre_int_period, post_int_period, model=model, disp=True,
@@ -582,7 +683,44 @@ def test_custom_model_fit(rand_data, pre_int_period, post_int_period, monkeypatc
     fit_mock.assert_called_with(
         bounds=[(None, None), (None, None), (None, None), (None, None)],
         disp=True,
-        prior_level_sd=None
+        prior_level_sd=None,
+        nseasons=[],
+        standardize=True
+    )
+
+    model = UnobservedComponents(endog=pre_data.iloc[:, 0], level='llevel',
+                                 exog=pre_data.iloc[:, 1:], freq_seasonal=[{'period': 3}])
+    model.fit = fit_mock
+
+    ci = CausalImpact(rand_data, pre_int_period, post_int_period, model=model, disp=True,
+        prior_level_sd=0.001)
+    fit_mock.assert_called_with(
+        bounds=[(None, None), (0.001 / 1.2, 0.001 * 1.2), (None, None), (None, None),
+                (None, None)],
+        disp=True,
+        prior_level_sd=0.001,
+        nseasons=[],
+        standardize=True
+    )
+
+    model = UnobservedComponents(
+        endog=pre_data.iloc[:, 0],
+        level=True,
+        exog=pre_data.iloc[:, 1],
+        trend=True,
+        seasonal=3,
+        stochastic_level=True
+    )
+    model.fit = fit_mock
+
+    ci = CausalImpact(rand_data, pre_int_period, post_int_period, model=model, disp=True,
+        prior_level_sd=0.001)
+    fit_mock.assert_called_with(
+        bounds=[(0.001 / 1.2, 0.001 * 1.2), (None, None), (None, None)],
+        disp=True,
+        prior_level_sd=0.001,
+        nseasons=[],
+        standardize=True
     )
 
     new_pre_data = rand_data.loc[pre_int_period[0]: pre_int_period[1], ['y', 'x1']]
@@ -597,6 +735,8 @@ def test_custom_model_fit(rand_data, pre_int_period, post_int_period, monkeypatc
     fit_mock.assert_called_with(
         bounds=[(None, None), (0.01 / 1.2, 0.01 * 1.2), (None, None)],
         disp=False,
+        nseasons=[],
+        standardize=True
     )
 
     model = UnobservedComponents(endog=new_pre_data.iloc[:, 0], level='dtrend',
@@ -608,7 +748,9 @@ def test_custom_model_fit(rand_data, pre_int_period, post_int_period, monkeypatc
     fit_mock.assert_called_with(
         bounds=[(None, None), (None, None)],
         disp=False,
-    )
+        nseasons=[],
+        standardize=True
+   )
 
     model = UnobservedComponents(endog=new_pre_data.iloc[:, 0], level='lltrend',
         exog=new_pre_data.iloc[:, 1:])
@@ -619,4 +761,6 @@ def test_custom_model_fit(rand_data, pre_int_period, post_int_period, monkeypatc
     fit_mock.assert_called_with(
         bounds=[(None, None), (0.01 / 1.2, 0.01 * 1.2), (None, None), (None, None)],
         disp=False,
-    )
+        nseasons=[],
+        standardize=True
+   )
