@@ -46,7 +46,7 @@ install_requires = [
     'jinja2'
 ]
 
-test_requires = [
+tests_require = [
     'pytest',
     'pytest-coverage',
     'flake8',
@@ -77,7 +77,7 @@ setup(
     packages=packages,
     include_package_data=True,
     install_requires=install_requires,
-    test_requires=test_requires,
+    tests_require=tests_require,
     license='MIT',
     classifiers=[
         'Development Status :: 4 - Beta',

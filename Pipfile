@@ -20,3 +20,4 @@ scipy = "*"
 statsmodels = "*"
 matplotlib = "*"
 jinja2 = "*"
+pycausalimpact = {path = ".", editable = true}
