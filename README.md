@@ -1,6 +1,6 @@
 # Causal Impact [![Build Status](https://travis-ci.com/dafiti/causalimpact.svg?branch=master)](https://travis-ci.com/dafiti/causalimpact) [![Coverage Status](https://coveralls.io/repos/github/dafiti/causalimpact/badge.svg?branch=master)](https://coveralls.io/github/dafiti/causalimpact?branch=master) [![PyPI version](https://badge.fury.io/py/pycausalimpact.svg)](https://badge.fury.io/py/pycausalimpact) [![Pyversions](https://img.shields.io/pypi/pyversions/pycausalimpact.svg)](https://pypi.python.org/pypi/pycausalimpact) [![GitHub license](https://img.shields.io/github/license/dafiti/causalimpact.svg)](https://github.com/dafiti/causalimpact/blob/master/LICENSE)
 
-This repository is a Python version of [Google's Causal Impact](https://github.com/google/CausalImpact) model with all functionalities fully ported and tested.
+Python causal impact (or causal inference) implementation of [Google's](https://github.com/google/CausalImpact) model with all functionalities fully ported and tested.
 
 ## How it works
 The main goal of the algorithm is to infer  the expected effect a given intervention (or any action) had on some response variable by analyzing differences between expected and observed time series data.
@@ -9,7 +9,7 @@ Data is divided in two parts: the first one is what is known as the "pre-interve
 
 The model makes as assumption (which is recommended to be confirmed in your data) that the response variable can be precisely modeled by a linear regression with what is known as "covariates" (or `X`) that **must not** be affected by the intervention that took place (for instance, if a company wants to infer what impact a given marketing campaign will have on its "revenue", then its daily "visits" cannot be used as a covariate as probably the total visits might be affected by the campaign. 
 
-The model is more commonly used to infer the impact that marketing interventions have on businesses such as the expected revenue associated to a given campaign or even to assert more precisely the revenue a given channel brings in by completely turning it off (also known as "hold-out" tests). It's important to note though that the model can be extensively used in different areas and subjects; any intervention on time series data can potentially be modeled and inferences be made upon observed and predicted data.
+It is more commonly used to infer the impact that marketing interventions have on businesses such as the expected revenue associated to a given campaign or even to assert more precisely the revenue a given channel brings in by completely turning it off (also known as "hold-out" tests). It's important to note though that the model can be extensively used in different areas and subjects; any intervention on time series data can potentially be modeled and inferences be made upon observed and predicted data.
 
 Please refer to <a href=http://nbviewer.jupyter.org/github/dafiti/causalimpact/blob/master/examples/getting_started.ipynb>getting started</a> in the `examples` folder for more information.
 
