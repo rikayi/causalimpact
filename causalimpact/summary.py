@@ -25,6 +25,8 @@ Summarizes performance information inferred in post-inferences compilation proce
 """
 
 
+from __future__ import absolute_import, division, print_function
+
 import os
 
 from jinja2 import Template

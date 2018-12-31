@@ -25,6 +25,9 @@ Plots the analysis obtained in causal impact algorithm.
 """
 
 
+from __future__ import absolute_import, division, print_function
+
+
 class Plot(object):
     """Takes all the vectors and final analysis performed in the post-period inference
     to plot final graphics.

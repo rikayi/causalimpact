@@ -20,11 +20,14 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+
+from __future__ import absolute_import, division, print_function
+
 import numpy as np
 import pandas as pd
-import pytest
 from statsmodels.tsa.arima_process import ArmaProcess
 
+import pytest
 from causalimpact import CausalImpact
 from causalimpact.inferences import Inferences
 
@@ -104,19 +107,6 @@ def test_default_causal_cto_w_negative_signal():
     y[70:] -= 1
     data = pd.DataFrame({'y': y, 'X': X}, columns=['y', 'X'])
     ci = CausalImpact(data, [0, 69], [70, 99])
-    assert ci.p_value < 0.05
-
-
-def test_causal_cto_w_negative_signal_no_standardization():
-    np.random.seed(1)
-    ar = np.r_[1, 0.9]
-    ma = np.array([1])
-    arma_process = ArmaProcess(ar, ma)
-    X = 100 + arma_process.generate_sample(nsample=100)
-    y = 1.2 * X + np.random.normal(size=(100))
-    y[70:] -= 1
-    data = pd.DataFrame({'y': y, 'X': X}, columns=['y', 'X'])
-    ci = CausalImpact(data, [0, 69], [70, 99], standardize=False)
     assert ci.p_value < 0.05
 
 

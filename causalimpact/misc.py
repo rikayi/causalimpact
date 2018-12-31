@@ -22,6 +22,9 @@
 
 """Miscellaneous functions to help in the implementation of Causal Impact."""
 
+
+from __future__ import absolute_import, division, print_function
+
 import numpy as np
 import scipy.stats as stats
 from statsmodels.tsa.statespace.structural import UnobservedComponents

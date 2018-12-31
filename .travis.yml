@@ -1,17 +1,28 @@
-sudo: false
 language: python
-install:
-  - make
-  - pip install coveralls
-script:
-  - make isort-check
-  - make flake8
-cache: pip
-jobs:
+matrix:
   include:
-    - stage: test
-      python: 3.6
-      script:
-        - make coverage
+    - python: 2.7
+      env: TOX_ENV=py27
+    - python: 3.5
+      env: TOX_ENV=py35
+    - python: 3.6
+      env: TOX_ENV=py36
+    - python: 3.7
+      env: TOX_ENV=py37
+      dist: xenial
+      sudo: true
+    - python: 3.7
+      env: TOX_ENV=flake8
+      dist: xenial
+      sudo: true
+    - python: 3.7
+      env: TOX_ENV=isort-check
+      dist: xenial
+      sudo: true
+install:
+  - pip install -U setuptools tox coveralls
+script:
+  - tox -e $TOX_ENV
 after_success:
-  - coveralls
+  - |
+    if [[ "$TOX_ENV" == "py37" ]] ; then make coverage && coveralls; fi

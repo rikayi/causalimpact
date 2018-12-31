@@ -22,11 +22,13 @@
 
 """Tests for module misc.py"""
 
+from __future__ import absolute_import, division, print_function
+
 import numpy as np
 import pandas as pd
-import pytest
 from pandas.util.testing import assert_almost_equal
 
+import pytest
 from causalimpact.misc import get_z_score, standardize, unstandardize
 
 
@@ -48,12 +50,14 @@ def test_basic_standardize():
         result.std(ddof=0).values
     )
 
+
 def test_standardize_w_various_distinct_inputs():
     test_data = [[1, 2, 1], [1, np.nan, 3], [10, 20, 30]]
     test_data = [pd.DataFrame(data, dtype="float") for data in test_data]
     for data in test_data:
         result, (mu, sig) = standardize(data)
         pd.util.testing.assert_frame_equal(unstandardize(result, (mu, sig)), data)
+
 
 def test_standardize_raises_single_input():
     with pytest.raises(ValueError):

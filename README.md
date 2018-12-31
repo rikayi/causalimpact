@@ -17,16 +17,12 @@ Please refer to <a href=http://nbviewer.jupyter.org/github/dafiti/causalimpact/b
 
     pip install pycausalimpact
 
-or (recommended):
-
-    pipenv install pycausalimpact
-
 ## Requirements
 
- - python3
+ - python{2.7, 3.5, 3.6, 3.7}
  - numpy
  - scipy
- - statsmodels 0.9.0
+ - statsmodels
  - matplotlib
  - jinja2
 

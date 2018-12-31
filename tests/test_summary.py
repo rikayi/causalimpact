@@ -25,11 +25,13 @@ Tests for summary.py module.
 """
 
 
+from __future__ import absolute_import, division, print_function
+
 import os
 
 import pandas as pd
-import pytest
 
+import pytest
 from causalimpact.summary import Summary
 
 
@@ -54,7 +56,7 @@ def summary_data():
             'actual',
             'predicted',
             'predicted_lower',
-            'predicted_upper', 
+            'predicted_upper',
             'abs_effect',
             'abs_effect_lower',
             'abs_effect_upper',
@@ -75,10 +77,10 @@ def test_summary_raises(summarizer):
     summarizer = Summary()
     with pytest.raises(RuntimeError):
         summarizer.summary()
- 
+
     with pytest.raises(ValueError):
         summarizer.summary_data = 'test'
-        summarizer.summary('test')    
+        summarizer.summary('test')
 
 
 def test_output_summary_1(summary_data, fix_path, summarizer):
@@ -99,7 +101,7 @@ def test_summary_1(summary_data, fix_path, summarizer):
     summary_data['average']['rel_effect'] = 0.41
     summary_data['average']['rel_effect_lower'] = -0.30
     summary_data['average']['rel_effect_upper'] = 0.30
- 
+
     result = summarizer.summary(output='report')
     expected = open(os.path.join(fix_path, 'test_summary_1')).read().strip()
     assert result == expected
@@ -113,7 +115,7 @@ def test_summary_2(summary_data, fix_path, summarizer):
     summary_data['average']['rel_effect'] = 0.41
     summary_data['average']['rel_effect_lower'] = 0.434
     summary_data['average']['rel_effect_upper'] = 0.234
- 
+
     result = summarizer.summary(output='report')
     expected = open(os.path.join(fix_path, 'test_summary_2')).read().strip()
     assert result == expected

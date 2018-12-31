@@ -1,23 +1,24 @@
 init:
-	pip install pipenv --upgrade
-	pipenv install --dev --skip-lock
+	pip install -U tox
+	pip install -U isort
 
 isort:
-	pipenv run isort -rc causalimpact
-	pipenv run isort -rc tests
+	pip install -U isort
+	isort -rc causalimpact
+	isort -rc tests
 
 isort-check:
-	pipenv run isort -rc -c causalimpact
-	pipenv run isort -rc -c tests
+	isort -ns __init__.py -rc -c -df causalimpact tests
 
 flake8:
-	pipenv run flake8 causalimpact
+	pip install -U flake8
+	flake8 causalimpact tests
 
 coverage:
-	pipenv run py.test -p no:warnings --cov-config .coveragerc --cov-report html --cov-report term --cov-report xml --cov=causalimpact
+	python setup.py test --coverage=true
 
 test:
-	pipenv run py.test
+	python setup.py test 
 
 publish:
 	pip install -U setuptools
@@ -27,4 +28,4 @@ publish:
 	twine upload dist/*
 	rm -fr build dist .egg pycausalimpact.egg-info
 
-.PHONY: flake8 isort coverage test publish
+.PHONY: flake8 isort coverage test publish isort-check
