@@ -13,7 +13,7 @@ It is more commonly used to infer the impact that marketing interventions have o
 
 Please refer to <a href=http://nbviewer.jupyter.org/github/dafiti/causalimpact/blob/master/examples/getting_started.ipynb>getting started</a> in the `examples` folder for more information.
 
-## Instalation
+## Installation
 
     pip install pycausalimpact
 
