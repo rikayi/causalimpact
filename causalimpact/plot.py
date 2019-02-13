@@ -50,6 +50,16 @@ class Plot(object):
         plt.figure(figsize=figsize)
         if self.summary_data is None:
             raise RuntimeError('Please first run inferences before plotting results')
+
+        valid_panels = ['original', 'pointwise', 'cumulative']
+        for panel in panels:
+            if panel not in valid_panels:
+                raise ValueError(
+                    '"{}" is not a valid panel. Valid panels are: {}.'.format(
+                        panel, ', '.join(['"{}"'.format(e) for e in valid_panels])
+                    )
+                )
+
         # We throw away the first point as there's no analysis to be performed on this
         # value.
         inferences = self.inferences.iloc[1:, :]
@@ -61,7 +71,7 @@ class Plot(object):
         if 'original' in panels:
             ax.plot(self.data.iloc[:, 0], 'k', label='y')
             ax.plot(inferences['preds'], 'b--', label='Predicted')
-            ax.axvline(inferences.index[intervention_idx] - 1, c='k', linestyle='--')
+            ax.axvline(inferences.index[intervention_idx - 1], c='k', linestyle='--')
             ax.fill_between(
                 inferences['preds'].index,
                 inferences['preds_lower'],
@@ -79,7 +89,7 @@ class Plot(object):
         if 'pointwise' in panels:
             ax = plt.subplot(n_panels, 1, idx, sharex=ax)
             ax.plot(inferences['point_effects'], 'b--', label='Point Effects')
-            ax.axvline(inferences.index[intervention_idx] - 1, c='k', linestyle='--')
+            ax.axvline(inferences.index[intervention_idx - 1], c='k', linestyle='--')
             ax.fill_between(
                 inferences['point_effects'].index,
                 inferences['point_effects_lower'],
@@ -98,7 +108,7 @@ class Plot(object):
         if 'cumulative' in panels:
             ax = plt.subplot(n_panels, 1, idx, sharex=ax)
             ax.plot(inferences['post_cum_effects'], 'b--', label='Cumulative Effect')
-            ax.axvline(inferences.index[intervention_idx] - 1, c='k', linestyle='--')
+            ax.axvline(inferences.index[intervention_idx - 1], c='k', linestyle='--')
             ax.fill_between(
                 inferences['post_cum_effects'].index,
                 inferences['post_cum_effects_lower'],
@@ -112,7 +122,7 @@ class Plot(object):
             ax.legend()
         plt.show()
 
-    def _get_plotter(self):
+    def _get_plotter(self):  # pragma: no cover
         """As some environments do not have matplotlib then we import the library through
         this method which prevents import exceptions.
 

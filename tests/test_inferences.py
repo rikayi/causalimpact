@@ -25,9 +25,9 @@ from __future__ import absolute_import, division, print_function
 
 import numpy as np
 import pandas as pd
+import pytest
 from statsmodels.tsa.arima_process import ArmaProcess
 
-import pytest
 from causalimpact import CausalImpact
 from causalimpact.inferences import Inferences
 

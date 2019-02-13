@@ -26,9 +26,9 @@ from __future__ import absolute_import, division, print_function
 
 import numpy as np
 import pandas as pd
+import pytest
 from pandas.util.testing import assert_almost_equal
 
-import pytest
 from causalimpact.misc import get_z_score, standardize, unstandardize
 
 

@@ -86,12 +86,14 @@ class PyTest(TestCommand):
 
     user_options = [
         ('coverage=', None, 'Runs coverage report.'),
+        ('html=', None, 'Saves result to html report.'),
     ]
 
     def initialize_options(self):
         TestCommand.initialize_options(self)
         self.pytest_args = []
         self.coverage = False
+        self.html = False
 
     def finalize_options(self):
         TestCommand.finalize_options(self)
@@ -100,6 +102,9 @@ class PyTest(TestCommand):
             self.pytest_args.extend(['--cov-config', '.coveragerc'])
             self.pytest_args.extend([
                 '--cov', 'causalimpact', '--cov-report', 'term-missing'])
+
+        if self.html:
+            self.pytest_args.extend(['--cov-report', 'html'])
 
         self.pytest_args.extend(['-p', 'no:warnings'])
 
@@ -135,7 +140,6 @@ setup(
         'Natural Language :: English',
         'Operating System :: Unix',
         'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: Implementation :: CPython',

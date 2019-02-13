@@ -30,8 +30,8 @@ from __future__ import absolute_import, division, print_function
 import os
 
 import pandas as pd
-
 import pytest
+
 from causalimpact.summary import Summary
 
 

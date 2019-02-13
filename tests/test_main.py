@@ -30,16 +30,16 @@ from __future__ import absolute_import, division, print_function
 
 import os
 
+import mock
 import numpy as np
 import pandas as pd
+import pytest
 from numpy.testing import assert_array_equal
 from pandas.core.indexes.range import RangeIndex
 from pandas.util.testing import assert_frame_equal
 from statsmodels.tsa.statespace.structural import (UnobservedComponents,
                                                    UnobservedComponentsResultsWrapper)
 
-import mock
-import pytest
 from causalimpact import CausalImpact
 from causalimpact.misc import standardize
 

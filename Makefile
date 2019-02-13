@@ -17,6 +17,9 @@ flake8:
 coverage:
 	python setup.py test --coverage=true
 
+coverage-html:
+	python setup.py test --coverage=true --html=true
+
 test:
 	python setup.py test 
 
