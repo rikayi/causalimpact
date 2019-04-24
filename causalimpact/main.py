@@ -88,12 +88,22 @@ class CausalImpact(BaseCausal):
       data: numpy array, pandas DataFrame.
           First column must contain the `y` measured value while the others contain the
           covariates `X` that are used in the linear regression component of the model.
+          If it's a pandas DataFrame, its index can be defined either as a `RangeIndex`,
+          an `Index` or `DateTimeIndex`.
+          In case of the second, then a conversion to `DateTime` type is automatically
+          performed; in case of failure, the original index is kept as is.
       pre_period: list.
-          A list of size two containing either `int` or `str` values that references the
-          first time point in the trained data up to the last one that will be used in the
-          pre-intervention period for training the model. For example, valid inputs are:
-          [0, 30] or ['20180901', '20180930']. The latter can be used only if the input
-          `data` is a pandas DataFrame whose index is time based.
+          A list of size two containing either `int`, `str` or `pd.Timestamp`  values
+          that references the first time point in the trained data up to the last one
+          to be used in the pre-intervention period for training the model.
+          For example, valid inputs are:
+            - [0, 30]
+            - ['20180901', '20180930']
+            - [pd.to_datetime('20180901'), pd.to_datetime('20180930')]
+            - [pd.Timestamp('20180901'), pd.Timestamp('20180930')]
+          where `pd` is the pandas module.
+          The latter can be used only if the input `data` is a pandas DataFrame whose
+          index is time based.
           Ideally, it should slice the data up to when the intervention started so that
           the trained model can more precisely predict what should have happened in the
           post-intervention period had no interference taken place.
@@ -181,6 +191,14 @@ class CausalImpact(BaseCausal):
       >>> df = df.set_index(pd.date_range(start='20180101', periods=len(data)))
       >>> pre_period = ['20180101', '20180311']
       >>> post_period = ['20180312', '20180410']
+      >>> ci = CausalImpact(df, pre_period, post_period)
+
+      Using pandas DataFrames with pandas timestamps:
+
+      >>> df = pd.DataFrame(data)
+      >>> df = df.set_index(pd.date_range(start='20180101', periods=len(data)))
+      >>> pre_period = [pd.to_datetime('20180101'), pd.to_datetime('20180311')]
+      >>> post_period = [pd.to_datetime('20180312'), pd.to_datetime('20180410')]
       >>> ci = CausalImpact(df, pre_period, post_period)
 
       Using automatic local level optimization:
@@ -588,6 +606,32 @@ class CausalImpact(BaseCausal):
         if data.shape[1] > 1:
             if data.iloc[:, 1:].isna().values.any():
                 raise ValueError('Input data cannot have NAN values.')
+        # If index is a string of dates, try to convert it to datetimes which helps
+        # in plotting.
+        data = self._convert_index_to_datetime(data)
+        return data
+
+    def _convert_index_to_datetime(self, data):
+        """
+        If input data has index of string dates, i.e, '20180101', '20180102'..., try
+        to convert it to datetime specifically, which results in
+        Timestamp('2018-01-01 00:00:00'), Timestamp('2018-01-02 00:00:00')
+
+        Args
+        ----
+          data: pandas DataFrame
+              Input data used in causal impact analysis.
+
+        Returns
+        -------
+          data: pandas DataFrame
+              Same input data with potentially new index of type DateTime.
+        """
+        if isinstance(data.index.values[0], str):
+            try:
+                data.set_index(pd.to_datetime(data.index), inplace=True)
+            except ValueError:
+                pass
         return data
 
     def _process_pre_post_data(self, data, pre_period, post_period):
@@ -639,7 +683,7 @@ class CausalImpact(BaseCausal):
         Args
         ----
           period: list.
-              Containing two values that can be either `int` or `str`.
+              Containing two values that can be either `int`, `str` or `pd.Timestamp`
           data: pandas DataFrame.
               Input Causal Impact data.
 
@@ -666,17 +710,20 @@ class CausalImpact(BaseCausal):
             raise ValueError('Input period cannot have `None` values.')
         if not (
             (isinstance(period[0], int) and isinstance(period[1], int)) or
-            (isinstance(period[1], str) and isinstance(period[1], str))
+            (isinstance(period[1], str) and isinstance(period[1], str)) or
+            (isinstance(period[1], pd.Timestamp) and isinstance(period[1], pd.Timestamp))
         ):
-            raise ValueError('Input must contain either int or str.')
+            raise ValueError('Input must contain either int, str or pandas Timestamp')
         # Tests whether the input period is indeed present in the input data index.
         for point in period:
             if point not in data.index:
+                if isinstance(point, pd.Timestamp):
+                    point = point.strftime('%Y%m%d')
                 raise ValueError("{point} not present in input data index.".format(
-                    point=point
+                    point=str(point)
                     )
                 )
-        if isinstance(period[0], str):
+        if isinstance(period[0], str) or isinstance(period[0], pd.Timestamp):
             period = self._convert_str_period_to_int(period, data)
         return period
 
@@ -686,7 +733,7 @@ class CausalImpact(BaseCausal):
 
         Args
         ----
-          period: list of str.
+          period: list of str or pandas timestamps
           data: pandas DataFrame.
 
         Returns

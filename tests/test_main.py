@@ -443,7 +443,7 @@ def test_periods_validation(rand_data, date_rand_data):
 
     with pytest.raises(ValueError) as excinfo:
         CausalImpact(rand_data, [0, 5.5], [15, 11])
-    assert str(excinfo.value) == 'Input must contain either int or str.'
+    assert str(excinfo.value) == 'Input must contain either int, str or pandas Timestamp'
 
     with pytest.raises(ValueError) as excinfo:
         CausalImpact(rand_data, [-2, 10], [11, 20])
@@ -473,6 +473,33 @@ def test_periods_validation(rand_data, date_rand_data):
         CausalImpact(date_rand_data, ['20170101', '20180110'],
                      ['20180111', '20180120'])
     assert str(excinfo.value) == ('20170101 not present in input data index.')
+
+    with pytest.raises(ValueError) as excinfo:
+        CausalImpact(rand_data, [pd.Timestamp('20180101'), pd.Timestamp('20180110')],
+                     [pd.Timestamp('20180111'), pd.Timestamp('20180130')])
+    assert str(excinfo.value) == (
+        '20180101 not present in input data index.'
+    )
+
+    with pytest.raises(ValueError) as excinfo:
+        CausalImpact(date_rand_data, [pd.Timestamp('20180101'),
+                     pd.Timestamp('20180110')], [pd.Timestamp('20180111'),
+                     pd.Timestamp('20200130')])
+    assert str(excinfo.value) == ('20200130 not present in input data index.')
+
+    with pytest.raises(ValueError) as excinfo:
+        CausalImpact(date_rand_data, [pd.Timestamp('20170101'),
+                     pd.Timestamp('20180110')], [pd.Timestamp('20180111'),
+                     pd.Timestamp('20180120')])
+    assert str(excinfo.value) == ('20170101 not present in input data index.')
+
+
+def test_string_index_with_no_date_formatted(rand_data, pre_int_period, post_int_period):
+    rand_data.set_index(rand_data.index.map(str), inplace=True)
+    pre_period = ['0', '60']
+    post_period = ['61', '90']
+
+    _ = CausalImpact(rand_data, pre_period, post_period)
 
 
 def test_default_causal_inferences(fix_path):
@@ -542,6 +569,40 @@ def test_default_causal_inferences_w_date(fix_path):
     assert round(ci.summary_data['cumulative']['rel_effect'], 1) == 0.2
     assert round(ci.summary_data['cumulative']['rel_effect_lower'], 2) == 0.17
     assert round(ci.summary_data['cumulative']['rel_effect_upper'], 2) == 0.25
+
+    assert round(ci.p_value, 1) == 0.0
+
+
+def test_default_causal_inferences_w_str_date(fix_path):
+    np.random.seed(1)
+    data = pd.read_csv(os.path.join(fix_path, 'volks_data.csv'), header=0, sep=' ',
+                       index_col='Date')
+
+    pre_period = [np.min(data.index.values), pd.Timestamp('2015-09-13')]
+    post_period = [pd.Timestamp('2015-09-20'), np.max(data.index.values)]
+
+    ci = CausalImpact(data, pre_period, post_period)
+    assert int(ci.summary_data['average']['actual']) == 126
+    assert int(ci.summary_data['average']['predicted']) == 171
+    assert int(ci.summary_data['average']['predicted_lower']) == 165
+    assert int(ci.summary_data['average']['predicted_upper']) == 177
+    assert int(ci.summary_data['average']['abs_effect']) == -44
+    assert round(ci.summary_data['average']['abs_effect_lower'], 1) == -50.4
+    assert int(ci.summary_data['average']['abs_effect_upper']) == -39
+    assert round(ci.summary_data['average']['rel_effect'], 1) == -0.3
+    assert round(ci.summary_data['average']['rel_effect_lower'], 2) == -0.29
+    assert round(ci.summary_data['average']['rel_effect_upper'], 2) == -0.23
+
+    assert int(ci.summary_data['cumulative']['actual']) == 10026
+    assert int(ci.summary_data['cumulative']['predicted']) == 13574
+    assert int(ci.summary_data['cumulative']['predicted_lower']) == 13113
+    assert int(ci.summary_data['cumulative']['predicted_upper']) == 14004
+    assert int(ci.summary_data['cumulative']['abs_effect']) == -3548
+    assert int(ci.summary_data['cumulative']['abs_effect_lower']) == -3977
+    assert int(ci.summary_data['cumulative']['abs_effect_upper']) == -3087
+    assert round(ci.summary_data['cumulative']['rel_effect'], 1) == -0.3
+    assert round(ci.summary_data['cumulative']['rel_effect_lower'], 2) == -0.29
+    assert round(ci.summary_data['cumulative']['rel_effect_upper'], 2) == -0.23
 
     assert round(ci.p_value, 1) == 0.0
 

@@ -47,6 +47,16 @@ def date_rand_data(rand_data):
 
 
 @pytest.fixture
+def pre_int_gap_period():
+    return [10, 89]
+
+
+@pytest.fixture
+def post_int_gap_period():
+    return [110, 189]
+
+
+@pytest.fixture
 def pre_int_period():
     return [0, 99]
 
@@ -64,3 +74,13 @@ def pre_str_period():
 @pytest.fixture
 def post_str_period():
     return ['20180411', '20180719']
+
+
+@pytest.fixture
+def pre_str_gap_period():
+    return ['20180201', '20180401']
+
+
+@pytest.fixture
+def post_str_gap_period():
+    return ['20180501', '20180701']

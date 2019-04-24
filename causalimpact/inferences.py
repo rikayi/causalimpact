@@ -23,7 +23,7 @@ from __future__ import absolute_import, division, print_function
 import numpy as np
 import pandas as pd
 
-from causalimpact.misc import get_referenced_model, unstandardize
+from causalimpact.misc import get_referenced_model, get_z_score, unstandardize
 
 
 class Inferences(object):
@@ -193,31 +193,43 @@ class Inferences(object):
         exog = self.post_data if self.mu_sig is None else self.normed_post_data
         zero_series = pd.Series([0])
 
-        pre_predictor = self.trained_model.get_prediction()
+        # We do exactly as in statsmodels for past predictions:
+        # https://github.com/statsmodels/statsmodels/blob/v0.9.0/statsmodels/tsa/statespace/structural.py
+        predict = self.trained_model.filter_results.forecasts[0]
+        std_errors = np.sqrt(self.trained_model.filter_results.forecasts_error_cov[0, 0])
+
+        critical_value = get_z_score(1 - self.alpha / 2.)
+
+        pre_preds_lower = pd.Series(
+            self._unstardardize(predict - critical_value * std_errors),
+            index=self.pre_data.index
+        )
+        pre_preds_upper = pd.Series(
+            self._unstardardize(predict + critical_value * std_errors),
+            index=self.pre_data.index
+        )
+
         post_predictor = self.trained_model.get_forecast(
             steps=len(self.post_data),
             exog=exog.iloc[:, 1:],
             alpha=self.alpha
         )
 
-        pre_preds = self._unstardardize(pre_predictor.predicted_mean)
+        pre_preds = pd.Series(
+            self._unstardardize(predict),
+            index=self.pre_data.index
+        )
         post_preds = self._unstardardize(post_predictor.predicted_mean)
 
         # Sets index properly.
-        pre_preds.index = self.pre_data.index
         post_preds.index = self.post_data.index
 
         # Confidence Intervals.
-        pre_ci = self._unstardardize(pre_predictor.conf_int(alpha=self.alpha))
-        pre_preds_lower = pre_ci.iloc[:, 0]  # Only valid from statsmodels 0.9.0
-        pre_preds_upper = pre_ci.iloc[:, 1]
         post_ci = self._unstardardize(post_predictor.conf_int(alpha=self.alpha))
         post_preds_lower = post_ci.iloc[:, 0]
         post_preds_upper = post_ci.iloc[:, 1]
 
         # Sets index properly.
-        pre_preds_lower.index = self.pre_data.index
-        pre_preds_upper.index = self.pre_data.index
         post_preds_lower.index = self.post_data.index
         post_preds_upper.index = self.post_data.index
 
@@ -249,10 +261,14 @@ class Inferences(object):
             index=self.get_cum_index()
         )
 
+        # Using a net value of data to accomodate cases where there's gaps between
+        # pre and post intervention periods.
+        net_data = pd.concat([self.pre_data, self.post_data])
+
         # Effects analysis.
-        point_effects = self.data.iloc[:, 0] - preds
-        point_effects_lower = self.data.iloc[:, 0] - preds_upper
-        point_effects_upper = self.data.iloc[:, 0] - preds_lower
+        point_effects = net_data.iloc[:, 0] - preds
+        point_effects_lower = net_data.iloc[:, 0] - preds_upper
+        point_effects_upper = net_data.iloc[:, 0] - preds_lower
         post_point_effects = self.post_data.iloc[:, 0] - post_preds
 
         # Cumulative Effects analysis.
@@ -317,15 +333,16 @@ class Inferences(object):
         ]
 
     def get_cum_index(self):
-        """As the cumulative data has one more data point (the first zero point), we add
-        to the post-intervention data the first index of the pre-data.
+        """As the cumulative data has one more data point (the first point is a zero),
+        we complete to the post-intervention data the first index of the pre-data.
 
         Returns
         -------
           index: pandas.core.indexes
             Index that describes data points in a pandas DataFrame.
         """
-        return self.data.loc[self.pre_period[1]: self.post_period[1]].index
+        new_idx = self.post_data.index.union([self.pre_data.index[-1]])
+        return new_idx
 
     def _summarize_posterior_inferences(self):
         """
