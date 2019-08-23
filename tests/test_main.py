@@ -75,6 +75,7 @@ def test_default_causal_cto(rand_data, pre_int_period, post_int_period):
     assert ci.trained_model.nobs == len(pre_data)
 
     assert ci.inferences is not None
+    assert ci.inferences.index.dtype == rand_data.index.dtype
     assert ci.p_value > 0 and ci.p_value < 1
     assert ci.n_sims == 1000
 
@@ -117,6 +118,7 @@ def test_default_causal_cto_w_date(date_rand_data, pre_str_period, post_str_peri
     assert ci.trained_model.nobs == len(pre_data)
 
     assert ci.inferences is not None
+    assert ci.inferences.index.dtype == date_rand_data.index.dtype
     assert ci.p_value > 0 and ci.p_value < 1
     assert ci.n_sims == 1000
 
@@ -156,6 +158,7 @@ def test_default_causal_cto_no_exog(rand_data, pre_int_period, post_int_period):
     assert ci.trained_model.nobs == len(pre_data)
 
     assert ci.inferences is not None
+    assert ci.inferences.index.dtype == rand_data.index.dtype
     assert ci.p_value > 0 and ci.p_value < 1
     assert ci.n_sims == 1000
 
@@ -200,6 +203,7 @@ def test_default_causal_cto_w_np_array(rand_data, pre_int_period, post_int_perio
     assert ci.trained_model.nobs == len(pre_data)
 
     assert ci.inferences is not None
+    assert ci.inferences.index.dtype == rand_data.index.dtype
     assert ci.p_value > 0 and ci.p_value < 1
     assert ci.n_sims == 1000
 
@@ -217,6 +221,7 @@ def test_causal_cto_w_no_standardization(rand_data, pre_int_period, post_int_per
         )
     )
     assert ci.p_value > 0 and ci.p_value < 1
+    assert ci.inferences.index.dtype == rand_data.index.dtype
 
 
 def test_causal_cto_w_seasons(date_rand_data, pre_str_period, post_str_period):
@@ -230,6 +235,7 @@ def test_causal_cto_w_seasons(date_rand_data, pre_str_period, post_str_period):
                                 {'period': 3, 'harmonis': 1}])
     assert ci.model.freq_seasonal_periods == [4, 3]
     assert ci.model.freq_seasonal_harmonics == [1, 1]
+    assert ci.inferences.index.dtype == date_rand_data.index.dtype
 
 
 def test_causal_cto_w_custom_model_and_seasons(rand_data, pre_int_period,
@@ -243,6 +249,7 @@ def test_causal_cto_w_custom_model_and_seasons(rand_data, pre_int_period,
 
     assert ci.model.freq_seasonal_periods == [4, 3]
     assert ci.model.freq_seasonal_harmonics == [2, 1]
+    assert ci.inferences.index.dtype == rand_data.index.dtype
 
 
 def test_causal_cto_w_custom_model(rand_data, pre_int_period, post_int_period):
@@ -260,6 +267,7 @@ def test_causal_cto_w_custom_model(rand_data, pre_int_period, post_int_period):
 
     assert isinstance(ci.trained_model, UnobservedComponentsResultsWrapper)
     assert ci.trained_model.nobs == len(pre_data)
+    assert ci.inferences.index.dtype == rand_data.index.dtype
 
 
 def test_causal_cto_raises_on_None_input(rand_data, pre_int_period, post_int_period):
@@ -534,6 +542,7 @@ def test_default_causal_inferences(fix_path):
     assert round(ci.summary_data['cumulative']['rel_effect_upper'], 2) == 0.25
 
     assert round(ci.p_value, 1) == 0.0
+    assert ci.inferences.index.dtype == data.index.dtype
 
 
 def test_default_causal_inferences_w_date(fix_path):
@@ -571,6 +580,7 @@ def test_default_causal_inferences_w_date(fix_path):
     assert round(ci.summary_data['cumulative']['rel_effect_upper'], 2) == 0.25
 
     assert round(ci.p_value, 1) == 0.0
+    assert ci.inferences.index.dtype == data.index.dtype
 
 
 def test_default_causal_inferences_w_str_date(fix_path):
@@ -605,6 +615,7 @@ def test_default_causal_inferences_w_str_date(fix_path):
     assert round(ci.summary_data['cumulative']['rel_effect_upper'], 2) == -0.23
 
     assert round(ci.p_value, 1) == 0.0
+    assert ci.inferences.index.dtype == data.index.dtype
 
 
 def test_default_model_fit(rand_data, pre_int_period, post_int_period, monkeypatch):

@@ -13,10 +13,17 @@ matrix:
       env: TOX_ENV=flake8
       dist: xenial
       sudo: true
+    - python: 3.7
+      env: TOX_ENV=isort-check
+      dist: xenial
+      sudo: true
 install:
   - pip install -U setuptools tox coveralls
 script:
-  - tox -e $TOX_ENV
+  - if [ $TOX_ENV == "isort-check" ];
+    then make isort-check;
+    else tox -e $TOX_ENV;
+    fi
 after_success:
   - |
     if [[ "$TOX_ENV" == "py37" ]] ; then make coverage && coveralls; fi

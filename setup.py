@@ -28,6 +28,7 @@ from setuptools import setup
 from setuptools.command.test import test as TestCommand
 
 
+
 here = os.path.abspath(os.path.dirname(__file__))
 
 if sys.argv[-1] == 'publish':
@@ -35,20 +36,38 @@ if sys.argv[-1] == 'publish':
     os.system('twine upload dist/*')
     sys.exit()
 
-install_requires = [
-    'numpy',
-    'scipy',
-    'statsmodels>=0.9.0',
-    'matplotlib>=2.2.3',
-    'jinja2>=2.10'
-]
-
-tests_require = [
-    'pytest',
-    'pytest-cov',
-    'mock',
-    'tox'
-]
+if sys.version_info == (2, 7):
+    install_requires = [
+        'numpy==1.16.4',
+        'scipy==1.2.2',
+        'pandas==0.24.2',
+        'statsmodels==0.9.0',
+        'matplotlib==2.2.4',
+        'jinja2>=2.10'
+    ]
+    
+    tests_require = [
+        'pytest==4.6.5',
+        'pytest-cov',
+        'mock',
+        'tox'
+    ]
+    
+else:
+    install_requires = [
+        'numpy',
+        'scipy',
+        'statsmodels>=0.9.0',
+        'matplotlib>=2.2.3',
+        'jinja2>=2.10'
+    ]
+    
+    tests_require = [
+        'pytest',
+        'pytest-cov',
+        'mock',
+        'tox'
+    ]
 
 setup_requires = [
     'flake8',

@@ -1,14 +1,11 @@
-init:
-	pip install -U tox
-	pip install -U isort
-
 isort:
 	pip install -U isort
 	isort -rc causalimpact
 	isort -rc tests
 
 isort-check:
-	isort -ns __init__.py -rc -c -df causalimpact tests
+	pip install -U isort
+	isort -ns __init__.py -rc -c -df -p causalimpact causalimpact tests
 
 flake8:
 	pip install -U flake8
@@ -23,6 +20,10 @@ coverage-html:
 test:
 	python setup.py test 
 
+tox:
+	pip install -U tox
+	tox -p all
+
 publish:
 	pip install -U setuptools
 	pip install -U wheel
@@ -31,4 +32,4 @@ publish:
 	twine upload dist/*
 	rm -fr build dist .egg pycausalimpact.egg-info
 
-.PHONY: flake8 isort coverage test publish isort-check
+.PHONY: flake8 isort coverage test publish isort-check tox

@@ -191,6 +191,7 @@ class Inferences(object):
         """
         lower, upper = self.lower_upper_percentile
         exog = self.post_data if self.mu_sig is None else self.normed_post_data
+
         zero_series = pd.Series([0])
 
         # We do exactly as in statsmodels for past predictions:
@@ -241,10 +242,10 @@ class Inferences(object):
         # Cumulative analysis.
         post_cum_y = np.cumsum(self.post_data.iloc[:, 0])
         post_cum_y = pd.concat([zero_series, post_cum_y], axis=0)
-        post_cum_y.index = self.get_cum_index()
+        post_cum_y.index = self._get_cum_index()
         post_cum_pred = np.cumsum(post_preds)
         post_cum_pred = pd.concat([zero_series, post_cum_pred])
-        post_cum_pred.index = self.get_cum_index()
+        post_cum_pred.index = self._get_cum_index()
         post_cum_pred_lower, post_cum_pred_upper = np.percentile(
             np.cumsum(self.simulated_y, axis=1),
             [lower, upper],
@@ -254,11 +255,11 @@ class Inferences(object):
         # Sets index properly.
         post_cum_pred_lower = pd.Series(
             np.concatenate([[0], post_cum_pred_lower]),
-            index=self.get_cum_index()
+            index=self._get_cum_index()
         )
         post_cum_pred_upper = pd.Series(
             np.concatenate([[0], post_cum_pred_upper]),
-            index=self.get_cum_index()
+            index=self._get_cum_index()
         )
 
         # Using a net value of data to accomodate cases where there's gaps between
@@ -274,7 +275,7 @@ class Inferences(object):
         # Cumulative Effects analysis.
         post_cum_effects = np.cumsum(post_point_effects)
         post_cum_effects = pd.concat([zero_series, post_cum_effects])
-        post_cum_effects.index = self.get_cum_index()
+        post_cum_effects.index = self._get_cum_index()
         post_cum_effects_lower, post_cum_effects_upper = np.percentile(
             np.cumsum(self.post_data.iloc[:, 0].values - self.simulated_y, axis=1),
             [lower, upper],
@@ -284,11 +285,11 @@ class Inferences(object):
         # Sets index properly.
         post_cum_effects_lower = pd.Series(
             np.concatenate([[0], post_cum_effects_lower]),
-            index=self.get_cum_index()
+            index=self._get_cum_index()
         )
         post_cum_effects_upper = pd.Series(
             np.concatenate([[0], post_cum_effects_upper]),
-            index=self.get_cum_index()
+            index=self._get_cum_index()
         )
 
         self.inferences = pd.concat(
@@ -332,7 +333,7 @@ class Inferences(object):
             'post_cum_effects_upper'
         ]
 
-    def get_cum_index(self):
+    def _get_cum_index(self):
         """As the cumulative data has one more data point (the first point is a zero),
         we complete to the post-intervention data the first index of the pre-data.
 
@@ -341,7 +342,12 @@ class Inferences(object):
           index: pandas.core.indexes
             Index that describes data points in a pandas DataFrame.
         """
+        # In newer versions of Numpy/Pandas, the union operation between indices returns
+        # an Index with `dtype=object`. We, therefore, create this variable in order to
+        # restore the original value which is used later on by the plotting interface.
+        index_dtype = self.post_data.index.dtype
         new_idx = self.post_data.index.union([self.pre_data.index[-1]])
+        new_idx = new_idx.astype(index_dtype)
         return new_idx
 
     def _summarize_posterior_inferences(self):
