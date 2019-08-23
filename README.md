@@ -39,6 +39,8 @@ import numpy as np
 import pandas as pd
 from statsmodels.tsa.arima_process import ArmaProcess
 from causalimpact import CausalImpact
+
+
 np.random.seed(12345)
 ar = np.r_[1, 0.9]
 ma = np.array([1])
@@ -46,15 +48,35 @@ arma_process = ArmaProcess(ar, ma)
 X = 100 + arma_process.generate_sample(nsample=100)
 y = 1.2 * X + np.random.normal(size=100)
 y[70:] += 5
+
 data = pd.DataFrame({'y': y, 'X': X}, columns=['y', 'X'])
 pre_period = [0, 69]
 post_period = [70, 99]
+
 ci = CausalImpact(data, pre_period, post_period)
 print(ci.summary())
+print(ci.summary(output='report'))
 ci.plot()
 ```
 
 ![alt text](https://raw.githubusercontent.com/dafiti/causalimpact/master/examples/ci_plot.png)
 
+## Differences Between Python and R Packages
+One thing you'll notice when using this package is that sometimes results will converge to be similar to the R package output and at times it may yield different conclusions.
+
+This is a quite complex topic and we have discussed it more throroughly on the issues number [#34](https://github.com/dafiti/causalimpact/issues/34), [#37](https://github.com/dafiti/causalimpact/issues/37) and [#40](https://github.com/dafiti/causalimpact/issues/40) which we highly recommend the reading.
+
+In a nutshell, Python implementation relies on [statsmodels](https://github.com/statsmodels/statsmodels) which uses a classical Kalman Filter approach for solving the statespace equations whereas R\`s uses a Bayesian approach (from [bsts](https://github.com/cran/bsts) package) with a stochastic Kalman Filter technique; both algorithms are expected to converge to similar final statespace solution [(ref)](https://stackoverflow.com/questions/57300211/local-level-model-not-fully-optimizing-irregular-state/57316141?noredirect=1#comment101157526_57316141).
+
+Still, despite the similarities, both packages uses different assumptions for prior initalizations as well as for steps involved in the optimization process: while in R we find an approach that relies on user prior knowledge, Python uses classical statistical techniques aiming to maximize the likelihood function expressed in terms of the structural time series components.
+
+As we discuss in the previously mentioned issues, it's hard to tell which is right or "more right"; each package has its own assumptions and its own techniques making it up for the final user to decide what is appropriate or not. We recommend comparing results from both packages in your use cases to have a more general idea whether there's convergence in conclusions or not.
+
+As a final note, when using this Python package, **we highly recommend setting the prior as None** like so:
+
+    ci = CausalImpact(data, pre_period, post_period, prior_level_sd=None)
+
+This will let statsmodel itself do the optimization for the prior on the local level component. If you feel confident that your local level prior should be a given specific value (say `0.01`), then it's probably ok to use it there (only if confident as otherwise you run the risk of ending up with sub-optimal solutions in the end).
+
 ## Contributing, Bugs, Questions
-Contributions are more than welcome! If you want to propose new changes, fix bugs or improve something feel free to fork the repository and send us a Pull Request. You can also open new `Issues` for reporting bugs and general problems.
+Contributions are more than welcome! If you want to propose new changes, fix bugs or improve something feel free to fork the repository and send us a Pull Request. You can also open new [`Issues`](https://github.com/dafiti/causalimpact/issues) for reporting bugs and general problems.
