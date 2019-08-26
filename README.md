@@ -76,7 +76,7 @@ As a final note, when using this Python package, **we highly recommend setting t
 
     ci = CausalImpact(data, pre_period, post_period, prior_level_sd=None)
 
-This will let statsmodel itself do the optimization for the prior on the local level component. If you feel confident that your local level prior should be a given specific value (say `0.01`), then it's probably ok to use it there (only if confident as otherwise you run the risk of ending up with sub-optimal solutions in the end).
+This will let statsmodel itself do the optimization for the prior on the local level component. If you are confident that your local level prior should be a given specific value (say `0.01`), then it's probably ok to use it there, otherwise you run the risk of obtaining sub-optimal solutions as a result.
 
 ## Contributing, Bugs, Questions
 Contributions are more than welcome! If you want to propose new changes, fix bugs or improve something feel free to fork the repository and send us a Pull Request. You can also open new [`Issues`](https://github.com/dafiti/causalimpact/issues) for reporting bugs and general problems.
