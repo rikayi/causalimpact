@@ -12,6 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-VERSION = (0, 0, 13)
+VERSION = (0, 0, 14)
 
 __version__ = '.'.join([str(e) for e in VERSION])

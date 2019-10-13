@@ -12,4 +12,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from causalimpact.__version__ import __version__
 from causalimpact.main import CausalImpact

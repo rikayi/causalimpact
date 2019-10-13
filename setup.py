@@ -28,7 +28,6 @@ from setuptools import setup
 from setuptools.command.test import test as TestCommand
 
 
-
 here = os.path.abspath(os.path.dirname(__file__))
 
 if sys.argv[-1] == 'publish':
@@ -45,14 +44,14 @@ if sys.version_info == (2, 7):
         'matplotlib==2.2.4',
         'jinja2>=2.10'
     ]
-    
+
     tests_require = [
         'pytest==4.6.5',
         'pytest-cov',
         'mock',
         'tox'
     ]
-    
+
 else:
     install_requires = [
         'numpy',
@@ -61,7 +60,7 @@ else:
         'matplotlib>=2.2.3',
         'jinja2>=2.10'
     ]
-    
+
     tests_require = [
         'pytest',
         'pytest-cov',

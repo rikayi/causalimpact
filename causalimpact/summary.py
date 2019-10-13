@@ -41,7 +41,7 @@ class Summary(object):
     def __init__(self):
         self.summary_data = None
 
-    def summary(self, output='summary'):
+    def summary(self, output='summary', digits=2):
         """
         Returns final results from causal impact analysis, such as absolute observed
         effect, the relative effect between prediction and observed variable, cumulative
@@ -52,6 +52,10 @@ class Summary(object):
           output: str.
               Can be either "summary" or "report". The first is a simpler output just
               informing general metrics such as expected absolute or relative effect.
+
+          digits: int.
+              Defines the number of digits after the decimal point to round. For
+              digits=2, value 1.566 becomes 1.57.
 
         Returns
         -------
@@ -73,12 +77,14 @@ class Summary(object):
                 summary=self.summary_data.to_dict(),
                 alpha=self.alpha,
                 z_score=get_z_score(1 - self.alpha / 2.),
-                p_value=self.p_value
+                p_value=self.p_value,
+                digits=digits
             )
         else:
             summary = REPORT_TMPL.render(
                 summary=self.summary_data.to_dict(),
                 alpha=self.alpha,
-                p_value=self.p_value
+                p_value=self.p_value,
+                digits=digits
             )
         return summary

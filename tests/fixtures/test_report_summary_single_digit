@@ -2,30 +2,34 @@ Analysis report {CausalImpact}
 
 
 During the post-intervention period, the response variable had
-an average value of approx. 5.3. In the absence of an
-intervention, we would have expected an average response of 4.3.
-The 90% interval of this counterfactual prediction is [3.3, 6.3].
+an average value of approx. 5.1. In the absence of an
+intervention, we would have expected an average response of 4.2.
+The 90% interval of this counterfactual prediction is [3.1, 6.2].
 Subtracting this prediction from the observed response yields
 an estimate of the causal effect the intervention had on the
-response variable. This effect is 3.3 with a 90% interval of
-[2.3, 6.3]. For a discussion of the significance of this effect,
+response variable. This effect is 3.1 with a 90% interval of
+[2.2, 6.1]. For a discussion of the significance of this effect,
 see below.
 
 
 Summing up the individual data points during the post-intervention
 period (which can only sometimes be meaningfully interpreted), the
-response variable had an overall value of 10.3.
+response variable had an overall value of 10.5.
 Had the intervention not taken place, we would have expected
-a sum of 9.3. The 90% interval of this prediction is [8.3, 9.3].
+a sum of 9.6. The 90% interval of this prediction is [8.5, 9.6].
 
 
 The above results are given in terms of absolute numbers. In relative
-terms, the response variable showed a decrease of -34.3%. The 90%
-interval of this percentage is [-43.4%, 23.4%].
-This means that, although it may look as though the intervention has
-exerted a negative effect on the response variable when considering
-the intervention period as a whole, this effect is not statistically
-significant and so cannot be meaningfully interpreted.
+terms, the response variable showed an increase of +41.0%. The 90%
+interval of this percentage is [-30.0%, 30.0%].
+
+
+This means that, although the intervention appears to have caused a
+positive effect, this effect is not statistically significant when
+considering the entire post-intervention period as a whole. Individual
+days or shorter stretches within the intervention period may of course
+still have had a significant effect, as indicated whenever the lower
+limit of the impact time series (lower plot) was above zero.
 
 
 The apparent effect could be the result of random fluctuations that
@@ -38,6 +42,6 @@ there are not enough control variables or when these variables do not
 correlate well with the response variable during the learning period.
 
 
-The probability of obtaining this effect by chance is p = 50%.
+The probability of obtaining this effect by chance is p = 50.0%.
 This means the effect may be spurious and would generally not be
 considered statistically significant.

@@ -18,7 +18,7 @@ coverage-html:
 	python setup.py test --coverage=true --html=true
 
 test:
-	python setup.py test 
+	python setup.py test
 
 tox:
 	pip install -U tox

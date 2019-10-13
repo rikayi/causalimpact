@@ -5,33 +5,33 @@ Analysis report {CausalImpact}
 
 
 During the post-intervention period, the response variable had
-an average value of approx. {{summary.average.actual | round(1)}}. {% if detected_sig -%}By contrast, in{% else %}In{% endif %} the absence of an
-intervention, we would have expected an average response of {{summary.average.predicted | round(1)}}.
-The {{CI(alpha)}} interval of this counterfactual prediction is [{{summary.average.predicted_lower | round(1)}}, {{summary.average.predicted_upper | round(1)}}].
+an average value of approx. {{summary.average.actual | round(digits)}}. {% if detected_sig -%}By contrast, in{% else %}In{% endif %} the absence of an
+intervention, we would have expected an average response of {{summary.average.predicted | round(digits)}}.
+The {{CI(alpha)}} interval of this counterfactual prediction is [{{summary.average.predicted_lower | round(digits)}}, {{summary.average.predicted_upper | round(digits)}}].
 Subtracting this prediction from the observed response yields
 an estimate of the causal effect the intervention had on the
-response variable. This effect is {{summary.average.abs_effect | round(1)}} with a {{CI(alpha)}} interval of
-{{[summary.average.abs_effect_lower | round(1), summary.average.abs_effect_upper | round(1)] | sort}}. For a discussion of the significance of this effect,
+response variable. This effect is {{summary.average.abs_effect | round(digits)}} with a {{CI(alpha)}} interval of
+{{[summary.average.abs_effect_lower | round(digits), summary.average.abs_effect_upper | round(digits)] | sort}}. For a discussion of the significance of this effect,
 see below.
 
 
 Summing up the individual data points during the post-intervention
 period (which can only sometimes be meaningfully interpreted), the
-response variable had an overall value of {{summary.cumulative.actual | round(1)}}.
+response variable had an overall value of {{summary.cumulative.actual | round(digits)}}.
 {% if detected_sig %}By contrast, had{% else %}Had{% endif %} the intervention not taken place, we would have expected
-a sum of {{summary.cumulative.predicted| round(1)}}. The {{CI(alpha)}} interval of this prediction is {{[summary.cumulative.predicted_lower | round(1), summary.cumulative.predicted_upper | round(1)]|sort}}.
+a sum of {{summary.cumulative.predicted| round(digits)}}. The {{CI(alpha)}} interval of this prediction is {{[summary.cumulative.predicted_lower | round(digits), summary.cumulative.predicted_upper | round(digits)]|sort}}.
 
 
 The above results are given in terms of absolute numbers. In relative
-terms, the response variable showed {% if positive_sig %}an increase of +{% else %}a decrease of {% endif %}{{'{0:.1%}'.format(summary.average.rel_effect)}}. The {{CI(alpha)}}
-interval of this percentage is [{{'{0:.1%}'.format([summary.average.rel_effect_lower, summary.average.rel_effect_upper] | min)}}, {{'{0:.1%}'.format([summary.average.rel_effect_upper, summary.average.rel_effect_lower]|max)}}].
+terms, the response variable showed {% if positive_sig %}an increase of +{% else %}a decrease of {% endif %}{{(100 * summary.average.rel_effect) | round(digits)}}%. The {{CI(alpha)}}
+interval of this percentage is [{{([(100 * summary.average.rel_effect_lower) | round(digits), (100 * summary.average.rel_effect_upper) | round(digits)] | min)}}%, {{([(100 * summary.average.rel_effect_upper) | round(digits), (100 * summary.average.rel_effect_lower) | round(digits)] | max)}}%].
 {% if detected_sig and positive_sig %}
 
 This means that the positive effect observed during the intervention
 period is statistically significant and unlikely to be due to random
 fluctuations. It should be noted, however, that the question of whether
 this increase also bears substantive significance can only be answered
-by comparing the absolute effect ({{summary.average.abs_effect | round(1)}}) to the original goal
+by comparing the absolute effect ({{summary.average.abs_effect | round(digits)}}) to the original goal
 of the underlying intervention.
 {% elif detected_sig and not positive_sig %}
 
@@ -70,12 +70,12 @@ correlate well with the response variable during the learning period.
 {%- if p_value < alpha %}
 
 The probability of obtaining this effect by chance is very small
-(Bayesian one-sided tail-area probability p = {{p_value | round(3)}}).
+(Bayesian one-sided tail-area probability p = {{p_value | round(digits)}}).
 This means the causal effect can be considered statistically
 significant.
 {%- else %}
 
-The probability of obtaining this effect by chance is p = {{'{0:.0%}'.format(p_value)}}.
+The probability of obtaining this effect by chance is p = {{(p_value * 100) | round(digits)}}%.
 This means the effect may be spurious and would generally not be
 considered statistically significant.
 {%- endif -%}
