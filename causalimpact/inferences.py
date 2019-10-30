@@ -23,7 +23,7 @@ from __future__ import absolute_import, division, print_function
 import numpy as np
 import pandas as pd
 
-from causalimpact.misc import get_referenced_model, get_z_score, unstandardize
+from causalimpact.misc import get_reference_model, get_z_score, unstandardize
 
 
 class Inferences(object):
@@ -116,7 +116,7 @@ class Inferences(object):
             y = np.zeros(len(self.post_data))
             exog_data = self.post_data if self.mu_sig is None else self.normed_post_data
             X = exog_data.iloc[:, 1:] if exog_data.shape[1] > 1 else None
-            model = get_referenced_model(self.model, y, X)
+            model = get_reference_model(self.model, y, X)
             # `params` is related to the parameters found when fitting the structural
             # components that best describes the observed time series.
             params = self.trained_model.params

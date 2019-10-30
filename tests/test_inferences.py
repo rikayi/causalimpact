@@ -18,9 +18,11 @@ import numpy as np
 import pandas as pd
 import pytest
 from statsmodels.tsa.arima_process import ArmaProcess
+from statsmodels.tsa.statespace.structural import UnobservedComponents
 
 from causalimpact import CausalImpact
 from causalimpact.inferences import Inferences
+from causalimpact.misc import standardize
 
 
 @pytest.fixture
@@ -136,3 +138,46 @@ def test_lower_upper_percentile():
     data = pd.DataFrame({'y': y, 'X': X}, columns=['y', 'X'])
     ci = CausalImpact(data, [0, 69], [70, 99])
     ci.lower_upper_percentile == [2.5, 97.5]
+
+
+def test_simulated_y_default_model():
+    np.random.seed(1)
+    ar = np.r_[1, 0.9]
+    ma = np.array([1])
+    arma_process = ArmaProcess(ar, ma)
+    X = 100 + arma_process.generate_sample(nsample=100)
+    y = 1.2 * X + np.random.normal(size=(100))
+    data = pd.DataFrame({'y': y, 'X': X}, columns=['y', 'X'])
+    ci = CausalImpact(data, [0, 69], [70, 99])
+
+    assert ci.simulated_y.shape == (1000, 30)
+
+    lower, upper = np.percentile(ci.simulated_y.mean(axis=1), [5, 95])
+    assert lower > 119
+    assert upper < 121
+
+
+def test_simulated_y_custom_model():
+    np.random.seed(1)
+    ar = np.r_[1, 0.9]
+    ma = np.array([1])
+    arma_process = ArmaProcess(ar, ma)
+    X = 100 + arma_process.generate_sample(nsample=100)
+    y = 1.2 * X + np.random.normal(size=(100))
+    data = pd.DataFrame({'y': y, 'X': X}, columns=['y', 'X'])
+    intervention_idx = 70
+    normed_pre_data, _ = standardize(data.iloc[:intervention_idx])
+
+    model = UnobservedComponents(
+        endog=normed_pre_data['y'].iloc[0:intervention_idx],
+        level='llevel',
+        exog=normed_pre_data['X'].iloc[0:intervention_idx]
+    )
+
+    ci = CausalImpact(data, [0, 69], [70, 99], model=model)
+
+    assert ci.simulated_y.shape == (1000, 30)
+
+    lower, upper = np.percentile(ci.simulated_y.mean(axis=1), [5, 95])
+    assert lower > 119
+    assert upper < 121
