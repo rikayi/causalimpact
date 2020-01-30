@@ -108,7 +108,7 @@ def get_reference_model(model, endog, exog):
     """
     model_args = model._get_init_kwds()
     model_args['endog'] = endog
-    if model_args['exog'] is not None:
+    if model.exog is not None:
         model_args['exog'] = exog
     ref_model = UnobservedComponents(**model_args)
     return ref_model

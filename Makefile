@@ -24,6 +24,10 @@ tox:
 	pip install -U tox
 	tox -p all
 
+pytest:
+	pip install -e ".[testing]"
+	pytest
+
 publish:
 	pip install -U setuptools
 	pip install -U wheel
@@ -32,4 +36,4 @@ publish:
 	twine upload dist/*
 	rm -fr build dist .egg pycausalimpact.egg-info
 
-.PHONY: flake8 isort coverage test publish isort-check tox
+.PHONY: flake8 isort coverage test publish isort-check tox pytest

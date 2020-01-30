@@ -88,8 +88,9 @@ def test_default_get_reference_model():
     ref_model_kwds = ref_model._get_init_kwds()
     model_kwds = model._get_init_kwds()
 
-    ref_model_kwds.pop('exog')
-    model_kwds.pop('exog')
+    # Python27 requires statsmodels 0.9.0 which still returns "exog" in `kwds`
+    ref_model_kwds.pop('exog', None)
+    model_kwds.pop('exog', None)
 
     assert ref_model_kwds == model_kwds
     assert array_equivalent(ref_model.endog, [[1], [1], [1]])
