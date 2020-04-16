@@ -118,14 +118,7 @@ class Plot(object):
             ax.grid(True, linestyle='--')
             ax.axhline(y=0, color='k', linestyle='--')
             ax.legend()
-
-        # Alert if points were removed due to loglikelihood burning data
-        if llb > 0:
-            text = ('Note: The first {} observations were removed due to approximate '
-                    'diffuse initialization.'.format(llb))
-            fig.text(0.1, 0.01, text, fontsize='large')
-
-        plt.show()
+        return fig
 
     def _get_plotter(self):  # pragma: no cover
         """As some environments do not have matplotlib then we import the library through
